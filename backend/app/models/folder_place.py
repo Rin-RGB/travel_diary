@@ -1,6 +1,7 @@
 from sqlalchemy import ForeignKey, UniqueConstraint, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base
+from datetime import datetime
 
 
 class FolderPlace(Base):
@@ -21,7 +22,7 @@ class FolderPlace(Base):
     )
 
     # вместо position:
-    date_added: Mapped["datetime"] = mapped_column(
+    date_added: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),
         nullable=False,
         server_default=func.now(),

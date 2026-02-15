@@ -19,7 +19,25 @@ class User(Base):
     role: Mapped[UserRole] = mapped_column(Enum(UserRole, name="user_role"), nullable=False)
 
 
-    places_created = relationship("Place", back_populates="created_by", cascade="all, delete-orphan")
-    folders = relationship("Folder", back_populates="user", cascade="all, delete-orphan")
-    requests_created = relationship("Request", back_populates="user", cascade="all, delete-orphan")
-    requests_moderated = relationship("Request", back_populates="admin", foreign_keys="Request.id_admin")
+    places_created = relationship(
+        "Place",
+        back_populates="created_by",
+        cascade="all, delete-orphan"
+    )
+    folders = relationship(
+        "Folder",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+    requests_created = relationship(
+        "Request",
+        back_populates="user",
+        foreign_keys="Request.id_user",
+        cascade="all, delete-orphan"
+    )
+
+    requests_moderated = relationship(
+        "Request",
+        back_populates="admin",
+        foreign_keys="Request.id_admin"
+    )

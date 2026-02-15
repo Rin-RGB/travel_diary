@@ -2,6 +2,7 @@ import enum
 from sqlalchemy import ForeignKey, DateTime, func, Text, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base
+from datetime import datetime
 
 class RequestStatus(str, enum.Enum):
     pending = "pending"
@@ -33,7 +34,7 @@ class Request(Base):
         nullable=False
     )
 
-    created_at: Mapped["datetime"] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),
         nullable=False,
         server_default=func.now(),
@@ -41,6 +42,18 @@ class Request(Base):
 
     comment: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    place = relationship("Place", back_populates="request")
-    user = relationship("User", back_populates="requests_created", foreign_keys=[id_user])
-    admin = relationship("User", back_populates="requests_moderated", foreign_keys=[id_admin])
+    place = relationship(
+        "Place",
+        back_populates="request"
+    )
+    user = relationship(
+        "User",
+        back_populates="requests_created",
+        foreign_keys=[id_user]
+    )
+
+    admin = relationship(
+        "User",
+        back_populates="requests_moderated",
+        foreign_keys=[id_admin]
+    )
