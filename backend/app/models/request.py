@@ -35,7 +35,7 @@ class Request(Base):
     )
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False),
+        DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
     )
