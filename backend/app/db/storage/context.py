@@ -1,11 +1,11 @@
 from sqlalchemy.orm import Session
 
-from app.storage.auth import AuthStorage
-from app.storage.places import PlacesStorage
-from app.storage.folders import FoldersStorage
-from app.storage.requests import RequestsStorage
-from app.storage.admin import AdminStorage
-from app.storage.users import UsersStorage
+from app.db.storage.auth import AuthStorage
+from app.db.storage.places import PlacesStorage
+from app.db.storage.folders import FoldersStorage
+from app.db.storage.requests import RequestsStorage
+from app.db.storage.admin import AdminStorage
+from app.db.storage.users import UsersStorage
 
 # ВСЕ
 class StorageContext:

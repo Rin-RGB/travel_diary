@@ -3,8 +3,8 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import and_, desc, select, update
 from sqlalchemy.orm import Session
 
-from app.models import EmailCode, User
-from app.models.user import UserRole
+from app.db.models import EmailCode, User
+from app.db.models import UserRole
 
 # АВТОРИЗАЦИЯ
 class AuthStorage:

@@ -1,5 +1,5 @@
 from app.db.session import engine
-from app.models import Base
+from app.db.models import Base
 
 # создает таблицы если их нет
 def init_db():

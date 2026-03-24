@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session # для аннотации
 
-from app.models import User
+from app.db.models import User
 
 # работа с ПОЛЬЗОВАТЕЛЯМИ
 class UsersStorage:

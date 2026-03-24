@@ -1,5 +1,5 @@
 from app.db.session import SessionLocal
-from app.storage.context import StorageContext
+from app.db.storage.context import StorageContext
 
 
 class Storage:
