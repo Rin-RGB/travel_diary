@@ -1,4 +1,5 @@
 from datetime import datetime
+from uuid import uuid4
 
 from sqlalchemy import ForeignKey, Text, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -11,14 +12,22 @@ class PlaceComment(Base):
     __tablename__ = "place_comments"
 
     # поля------------------------
+    id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid4
+    )
+
     place_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
         ForeignKey("places.id", ondelete="CASCADE"),
-        primary_key=True
+        nullable=False
     )
 
     admin_id: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
-        primary_key=True
+        nullable=False
     )
 
     text: Mapped[str] = mapped_column(Text, nullable=False)
@@ -30,5 +39,5 @@ class PlaceComment(Base):
     )
 
     # связи------------------------
-    place = relationship("Place", back_populates="comment")
+    place = relationship("Place", back_populates="comments")
     admin = relationship("User", back_populates="place_comments")

@@ -82,9 +82,8 @@ class Place(Base):
         cascade="all, delete-orphan"
     )
 
-    comment = relationship(
+    comments = relationship(
         "PlaceComment",
         back_populates="place",
-        uselist=False,
         cascade="all, delete-orphan"
     )

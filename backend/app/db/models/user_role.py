@@ -10,7 +10,7 @@ class UserRole(Base):
 
     # поля------------------------
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    role: Mapped[UUID] = mapped_column(String(50), unique=True, nullable=False)
+    role: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
 
     # связи------------------------
     users = relationship("User", back_populates="role")
