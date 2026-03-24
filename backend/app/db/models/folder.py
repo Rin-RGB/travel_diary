@@ -2,6 +2,8 @@ from sqlalchemy import String, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
+import uuid
+
 from app.db.models.base import Base
 
 
@@ -12,10 +14,10 @@ class Folder(Base):
     )  # У пользователя только одна папка с таким именем
 
     # поля------------------------
-    id: Mapped[UUID] = mapped_column(primary_key=True)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
 
-    id_user: Mapped[UUID] = mapped_column(
+    id_user: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False
     )
