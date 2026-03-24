@@ -1,5 +1,6 @@
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.models.base import Base
 
@@ -8,12 +9,12 @@ class TagPlace(Base):
     __tablename__ = "tag_places"
 
     # поля------------------------
-    id_tag: Mapped[int] = mapped_column(
+    id_tag: Mapped[UUID] = mapped_column(
         ForeignKey("tags.id", ondelete="CASCADE"),
         primary_key=True
     )
 
-    id_place: Mapped[int] = mapped_column(
+    id_place: Mapped[UUID] = mapped_column(
         ForeignKey("places.id", ondelete="CASCADE"),
         primary_key=True
     )

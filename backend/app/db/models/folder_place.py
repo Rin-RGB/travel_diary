@@ -2,6 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import ForeignKey, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.models.base import Base
 
@@ -10,12 +11,12 @@ class FolderPlace(Base):
     __tablename__ = "folder_places"
 
     # поля------------------------
-    id_folder: Mapped[int] = mapped_column(
+    id_folder: Mapped[UUID] = mapped_column(
         ForeignKey("folders.id", ondelete="CASCADE"),
         primary_key=True
     )
 
-    id_place: Mapped[int] = mapped_column(
+    id_place: Mapped[UUID] = mapped_column(
         ForeignKey("places.id", ondelete="CASCADE"),
         primary_key=True
     )

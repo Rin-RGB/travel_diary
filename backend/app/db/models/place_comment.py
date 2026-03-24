@@ -2,6 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import ForeignKey, Text, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.models.base import Base
 
@@ -10,12 +11,12 @@ class PlaceComment(Base):
     __tablename__ = "place_comments"
 
     # поля------------------------
-    place_id: Mapped[int] = mapped_column(
+    place_id: Mapped[UUID] = mapped_column(
         ForeignKey("places.id", ondelete="CASCADE"),
         primary_key=True
     )
 
-    admin_id: Mapped[int] = mapped_column(
+    admin_id: Mapped[UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),
         primary_key=True
     )

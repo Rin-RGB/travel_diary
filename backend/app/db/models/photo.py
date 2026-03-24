@@ -1,5 +1,6 @@
 from sqlalchemy import Text, Boolean, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.models.base import Base
 
@@ -8,7 +9,7 @@ class Photo(Base):
     __tablename__ = "photos"
 
     # поля------------------------
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[UUID] = mapped_column(primary_key=True)
 
     url: Mapped[str] = mapped_column(Text, nullable=False)
 
@@ -18,7 +19,7 @@ class Photo(Base):
         server_default="false"
     )
 
-    place_id: Mapped[int] = mapped_column(
+    place_id: Mapped[UUID] = mapped_column(
         ForeignKey("places.id", ondelete="CASCADE"),
         nullable=False
     )

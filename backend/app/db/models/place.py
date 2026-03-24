@@ -2,6 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import String, Text, ForeignKey, DateTime, func, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.models.base import Base
 
@@ -10,23 +11,23 @@ class Place(Base):
     __tablename__ = "places"
 
     # поля------------------------
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[UUID] = mapped_column(primary_key=True)
 
     name: Mapped[str] = mapped_column(String(255), nullable=False)
 
-    admin_id: Mapped[int | None] = mapped_column(
+    admin_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True
     )
 
-    user_id: Mapped[int | None] = mapped_column(
+    user_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True
     )
 
     address: Mapped[str] = mapped_column(Text, nullable=False)
 
-    city_id: Mapped[int] = mapped_column(
+    city_id: Mapped[UUID] = mapped_column(
         ForeignKey("cities.id", ondelete="RESTRICT"),
         nullable=False
     )
@@ -36,7 +37,7 @@ class Place(Base):
     lat: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True)
     lon: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True)
 
-    status_id: Mapped[int] = mapped_column(
+    status_id: Mapped[UUID] = mapped_column(
         ForeignKey("place_statuses.id", ondelete="RESTRICT"),
         nullable=False
     )

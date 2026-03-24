@@ -2,6 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import String, Boolean, DateTime, func, Index
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.models.base import Base
 
@@ -10,7 +11,7 @@ class EmailCode(Base):
     __tablename__ = "email_code"
 
     # поля------------------------
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[UUID] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(255), nullable=False)
     code: Mapped[str] = mapped_column(String(10), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(
