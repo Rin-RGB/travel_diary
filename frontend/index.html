@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дневник путешественника</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="images/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <div class="container">
+        <!-- Шапка с логотипом, названием и иконками -->
+        <header class="header">
+            <div class="logo-container">
+                <img src="images/logo.svg" alt="Логотип" class="logo-img">
+                <div class="logo-text-wrapper">
+                    <img src="images/header.svg" alt="ГОРИЗОНТ" class="header-title-img">
+                    <span class="logo-subtitle">Дневник путешествий</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <!-- Поисковая строка -->
+                <div class="search-wrapper">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Поиск по названию...">
+                </div>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="bi bi-moon"></i>
+                </button>
+                <div class="profile-container">
+                    <button class="profile-btn" id="profileBtn">
+                        <i class="bi bi-person"></i>
+                    </button>
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <a href="collections.html" class="dropdown-item">
+                            <i class="bi bi-folder"></i> Коллекции
+                        </a>
+                        <a href="settings.html" class="dropdown-item">
+                            <i class="bi bi-gear"></i> Настройки
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" class="dropdown-item" id="logoutBtn">
+                            <i class="bi bi-box-arrow-right"></i> Выход
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Основной контейнер с карточками -->
+        <div class="content-container">
+            <div class="top-row">
+                <h2 class="section-title" id="cityTitle">Лента</h2> 
+                <!-- Фильтр по тегам -->
+                <div class="filter-tags">
+                    <button class="tags-toggle-btn" id="tagsToggleBtn">
+                        <i class="bi bi-sliders2"></i>
+                        <span>Фильтр по тегам</span>
+                    </button>
+                    <div class="tags-dropdown" id="tagsDropdown">
+                        <div class="tags-dropdown-header">
+                            <span>Выберите теги</span>
+                            <button class="close-dropdown" id="closeTagsDropdown">✕</button>
+                        </div>
+                        <div class="tags-dropdown-content" id="tagsDropdownContent"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filters-row">
+                <!-- Фильтр по городу -->
+                <div class="filter-city">
+                    <button class="city-toggle-btn" id="cityToggleBtn">
+                        <i class="bi bi-geo-alt"></i>
+                        <span id="selectedCityDisplay">Все города</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <div class="city-dropdown" id="cityDropdown">
+                        <div class="city-dropdown-header">
+                            <span>Выберите город</span>
+                            <button class="close-dropdown" id="closeCityDropdown">✕</button>
+                        </div>
+                        <div class="city-dropdown-content" id="cityDropdownContent"></div>
+                    </div>
+                </div>
+                <!-- Переключатели вида ленты -->
+                <div class="view-toggle">
+                    <button class="view-btn" id="viewList" title="Список">
+                        <i class="bi bi-view-stacked"></i>  
+                    </button>
+                    <button class="view-btn active" id="viewGrid" title="Сетка">
+                        <i class="bi bi-grid"></i> 
+                    </button>
+                </div>
+            </div>
+
+            <!-- Контейнер для выбранных тегов -->
+            <div id="selectedTagsContainer" class="selected-tags-container"></div>
+
+            <!-- Лента с карточками -->
+            <div id="feedGrid" class="feed-grid"></div>
+        </div>
+    </div>
+    <!-- Модальное окно для карточки места -->
+    <div id="postModal" class="modal-dialog" role="dialog" aria-labelledby="modalTitle" aria-modal="true" aria-hidden="true" tabindex="-1">
+        <div class="modal-content-custom">
+            <div class="modal-header-custom">
+                <h2 id="modalTitle">Загрузка...</h2>
+                <button class="modal-close-btn" onclick="closePostModal()">✕</button>
+            </div>
+            <div class="modal-body-custom">
+                <div id="modalContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
