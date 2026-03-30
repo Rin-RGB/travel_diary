@@ -103,7 +103,7 @@ class FoldersStorage:
             items.append(
                 {
                     "id": place.id,
-                    "name": place.title,
+                    "name": place.name,
                     "city": place.city.city,
                     "cover_photo": place.photos[0].url if place.photos else None,
                     "tags": [tp.tag.name for tp in place.tag_places],

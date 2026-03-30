@@ -1,8 +1,8 @@
 from uuid import UUID
+from pydantic import BaseModel, Field
 
-from pydantic import BaseModel
 
-
+# 4.1 GET /api/v1/folders
 class FolderItemResponse(BaseModel):
     id: UUID
     name: str
@@ -16,6 +16,7 @@ class FoldersListResponse(BaseModel):
     total: int
 
 
+# 4.2 GET /api/v1/folders/:id
 class FolderPlaceItem(BaseModel):
     id: UUID
     name: str
@@ -32,10 +33,22 @@ class FolderDetailResponse(BaseModel):
     limit: int
     total: int
 
+
+# 4.3 POST /api/v1/folders
 class FolderCreateRequest(BaseModel):
     name: str
 
 
 class FolderCreateResponse(BaseModel):
+    id: UUID
+    name: str
+
+
+# 4.4 PATCH /api/v1/folders/:id
+class FolderUpdateRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+
+
+class FolderUpdateResponse(BaseModel):
     id: UUID
     name: str

@@ -17,13 +17,14 @@ class Folder(Base):
     )  # У пользователя только одна папка с таким именем
 
     # поля------------------------
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True,
+                                          default=uuid.uuid4,
+                                          )
+    name: Mapped[str] = mapped_column(String(255), nullable=False,)
 
     id_user: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
-        default=uuid.uuid4,
     )
 
     created_at: Mapped[datetime] = mapped_column(

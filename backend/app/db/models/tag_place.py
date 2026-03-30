@@ -14,7 +14,6 @@ class TagPlace(Base):
     id_tag: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("tags.id", ondelete="CASCADE"),
         primary_key=True,
-    default=uuid.uuid4,
     )
 
     id_place: Mapped[uuid.UUID] = mapped_column(
