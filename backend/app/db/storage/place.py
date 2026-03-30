@@ -20,7 +20,7 @@ class PlacesStorage:
         limit: int = 10,
         q: str = None,
         city: UUID = None,
-        tags: list[str] = None,
+        tags: list[UUID] | None = None,
         sort: str = None,
     ) -> tuple[list[Place], int]:
 

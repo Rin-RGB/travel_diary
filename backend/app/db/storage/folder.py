@@ -2,8 +2,13 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import selectinload
 
+from uuid import UUID
+
+from uuid import uuid4
 
 from app.db.models import Folder, FolderPlace, Place, TagPlace
+
+from app.core.reference_data import PLACE_STATUSES
 
 
 
@@ -15,7 +20,7 @@ class FoldersStorage:
     def get_user_folders(
         self,
         *,
-        user_id,
+        user_id: UUID,
         page: int = 1,
         limit: int = 10,
     ):
@@ -57,7 +62,7 @@ class FoldersStorage:
     def get_folder_with_places(
             self,
             folder_id,
-            user_id,
+            user_id: UUID,
             page: int,
             limit: int,
             sort: str | None = None,
@@ -121,7 +126,7 @@ class FoldersStorage:
 
     def create_folder(
             self,
-            user_id,
+            user_id: UUID,
             name: str,
     ):
         # проверка уникальности имени у пользователя
@@ -146,3 +151,100 @@ class FoldersStorage:
             "id": folder.id,
             "name": folder.name,
         }
+
+    def create(self, *, user_id: UUID, name: str) -> Folder:
+        folder = Folder(
+            id=uuid4(),
+            name=name,
+            id_user=user_id,
+        )
+
+        self.session.add(folder)
+        self.session.flush()  # чтобы получить id
+
+        return folder
+
+    def update_name(self, *, folder_id: UUID, user_id: UUID, name: str) -> Folder:
+        stmt = select(Folder).where(Folder.id == folder_id)
+        folder = self.session.execute(stmt).scalar_one_or_none()
+
+        if not folder:
+            raise ValueError("Folder not found")
+
+        if folder.id_user != user_id:
+            raise PermissionError("No access to this folder")
+
+        folder.name = name
+
+        self.session.flush()
+
+        return folder
+
+    def add_place(
+            self,
+            *,
+            folder_id: UUID,
+            place_id: UUID,
+            user_id: UUID,
+    ) -> None:
+        folder_stmt = select(Folder).where(Folder.id == folder_id)
+        folder = self.session.execute(folder_stmt).scalar_one_or_none()
+
+        if not folder:
+            raise ValueError("Folder not found")
+
+        if folder.id_user != user_id:
+            raise PermissionError("No access to this folder")
+
+        place_stmt = select(Place).where(
+            Place.id == place_id,
+            Place.id_status == PLACE_STATUSES["approved"],
+        )
+        place = self.session.execute(place_stmt).scalar_one_or_none()
+
+        if not place:
+            raise ValueError("Place not found")
+
+        exists_stmt = select(FolderPlace).where(
+            FolderPlace.id_folder == folder_id,
+            FolderPlace.id_place == place_id,
+        )
+        exists = self.session.execute(exists_stmt).scalar_one_or_none()
+
+        if exists:
+            return
+
+        folder_place = FolderPlace(
+            id_folder=folder_id,
+            id_place=place_id,
+        )
+        self.session.add(folder_place)
+        self.session.flush()
+
+    def remove_place(
+            self,
+            *,
+            folder_id: UUID,
+            place_id: UUID,
+            user_id: UUID,
+    ) -> None:
+        folder_stmt = select(Folder).where(Folder.id == folder_id)
+        folder = self.session.execute(folder_stmt).scalar_one_or_none()
+
+        if not folder:
+            raise ValueError("Folder not found")
+
+        if folder.id_user != user_id:
+            raise PermissionError("No access to this folder")
+
+        folder_place_stmt = select(FolderPlace).where(
+            FolderPlace.id_folder == folder_id,
+            FolderPlace.id_place == place_id,
+        )
+        folder_place = self.session.execute(folder_place_stmt).scalar_one_or_none()
+
+        if not folder_place:
+            raise ValueError("Place is not in folder")
+
+        self.session.delete(folder_place)
+        self.session.flush()
