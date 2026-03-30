@@ -2,11 +2,11 @@ from sqlalchemy.orm import Session
 
 from app.db.models import EmailCode
 from app.db.storage.auth import AuthStorage
-from app.db.storage.tags import TagsStorage
-from app.db.storage.email_codes import EmailCodeStorage
-from app.db.storage.places import PlacesStorage
-from app.db.storage.folders import FoldersStorage
-from app.db.storage.users import UsersStorage
+from app.db.storage.tag import TagsStorage
+from app.db.storage.email_code import EmailCodeStorage
+from app.db.storage.place import PlacesStorage
+from app.db.storage.folder import FoldersStorage
+from app.db.storage.user import UsersStorage
 
 # ВСЕ
 class StorageContext:

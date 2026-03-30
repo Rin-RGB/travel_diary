@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, literal
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.reference_data import PLACE_STATUSES
@@ -25,14 +25,13 @@ class PlacesStorage:
     ) -> tuple[list[Place], int]:
 
         if page < 1:
-            raise Exception('Page must be greater than 0')
-
+            raise ValueError("Page must be greater than 0")
         if limit < 1:
-            raise Exception('Limit must be greater than 0')
+            raise ValueError("Limit must be greater than 0")
 
         published_id = PLACE_STATUSES["approved"]
 
-        stmt = select(Place).where(Place.status_id == published_id)
+        stmt = select(Place).where(Place.id_status == published_id)
 
         # поиск
         if q:
@@ -40,13 +39,20 @@ class PlacesStorage:
 
         # фильтр по городу
         if city:
-            stmt = stmt.where(Place.city_id == city)
+            stmt = stmt.where(Place.id_city == city)
 
         # фильтр по тегам
         if tags:
-            stmt = stmt.join(Place.tag_places).where(
-                TagPlace.id_tag.in_(tags)
+            tags = list(set(tags))
+
+            tags_subquery = (
+                select(TagPlace.id_place)
+                .where(TagPlace.id_tag.in_(tags))
+                .group_by(TagPlace.id_place)
+                .having(func.count(func.distinct(TagPlace.id_tag)) == literal(len(tags)))
             )
+
+            stmt = stmt.where(Place.id.in_(tags_subquery))
 
         # сортировка
         # пока что только по дате
@@ -76,7 +82,7 @@ class PlacesStorage:
             select(Place)
             .where(
                 Place.id == place_id,
-                Place.status_id == published_status_id,
+                Place.id_status == published_status_id,
             )
             .options(
                 selectinload(Place.city),

@@ -49,7 +49,7 @@ class PlaceDetailResponse(BaseModel):
     address: str
     city: CityResponse
     description: str
-    lat: float
-    lon: float
+    lat: float  | None = None
+    lon: float  | None = None
     photos: list[PhotoResponse]
     tags: list[TagResponse]

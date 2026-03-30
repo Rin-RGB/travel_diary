@@ -13,23 +13,25 @@ class Place(Base):
     __tablename__ = "places"
 
     # поля------------------------
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True,
+                                          default=uuid.uuid4,
+                                          )
 
     name: Mapped[str] = mapped_column(String(255), nullable=False)
 
-    admin_id: Mapped[uuid.UUID | None] = mapped_column(
+    id_admin: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True
     )
 
-    user_id: Mapped[uuid.UUID | None] = mapped_column(
+    id_user: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True
     )
 
     address: Mapped[str] = mapped_column(Text, nullable=False)
 
-    city_id: Mapped[uuid.UUID] = mapped_column(
+    id_city: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("cities.id", ondelete="RESTRICT"),
         nullable=False
     )
@@ -39,7 +41,7 @@ class Place(Base):
     lat: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True)
     lon: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True)
 
-    status_id: Mapped[int] = mapped_column(
+    id_status: Mapped[int] = mapped_column(
         ForeignKey("place_statuses.id", ondelete="RESTRICT"),
         nullable=False
     )
@@ -54,13 +56,13 @@ class Place(Base):
     admin = relationship(
         "User",
         back_populates="moderated_places",
-        foreign_keys=[admin_id]
+        foreign_keys=[id_admin]
     )
 
     user = relationship(
         "User",
         back_populates="created_places",
-        foreign_keys=[user_id]
+        foreign_keys=[id_user]
     )
 
     city = relationship("City", back_populates="places")

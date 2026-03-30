@@ -1,6 +1,9 @@
 from sqlalchemy import String, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import DateTime, func
+
+from datetime import datetime
 
 import uuid
 
@@ -19,7 +22,14 @@ class Folder(Base):
 
     id_user: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False
+        nullable=False,
+        default=uuid.uuid4,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
     )
 
     # связи------------------------

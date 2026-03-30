@@ -11,7 +11,9 @@ class Photo(Base):
     __tablename__ = "photos"
 
     # поля------------------------
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True,
+                                          default=uuid.uuid4,
+                                          )
 
     url: Mapped[str] = mapped_column(Text, nullable=False)
 
@@ -21,7 +23,7 @@ class Photo(Base):
         server_default="false"
     )
 
-    place_id: Mapped[uuid.UUID] = mapped_column(
+    id_place: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("places.id", ondelete="CASCADE"),
         nullable=False
     )

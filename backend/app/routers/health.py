@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 # ---------- Проверка -----------
 router = APIRouter(
-    prefix="/health",
+    prefix="/api/v1/health",
     tags=["Health"]
 )
 

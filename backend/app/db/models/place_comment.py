@@ -20,13 +20,13 @@ class PlaceComment(Base):
         default=uuid4
     )
 
-    place_id: Mapped[uuid.UUID] = mapped_column(
+    id_place: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("places.id", ondelete="CASCADE"),
         nullable=False
     )
 
-    admin_id: Mapped[uuid.UUID] = mapped_column(
+    id_admin: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False

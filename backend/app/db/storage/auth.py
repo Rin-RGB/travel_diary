@@ -1,34 +1,53 @@
 from datetime import datetime, timedelta, timezone
-
 from sqlalchemy import and_, desc, select, update
 from sqlalchemy.orm import Session
-
+from app.core.reference_data import USER_ROLES
 from app.db.models import EmailCode, User
-from app.db.models import UserRole
 
-# АВТОРИЗАЦИЯ
+
 class AuthStorage:
     def __init__(self, session: Session) -> None:
         self._s = session
 
-    # создание кода
-    def create_email_code(self, *, email: str, code: str, ttl_minutes: int = 5) -> EmailCode:
-        now = datetime.now(timezone.utc) # текущее время
-        expires_at = now + timedelta(minutes=ttl_minutes) # когда истекает код
+    def create_code(
+        self,
+        *,
+        email: str,
+        code: str,
+        ttl_minutes: int = 5,
+    ) -> EmailCode:
+        now = datetime.now(timezone.utc)
+        expires_at = now + timedelta(minutes=ttl_minutes)
 
-        self._s.execute( # старые коды бан--- на всякий случай
+        # деактивируем все предыдущие
+        self._s.execute(
             update(EmailCode)
-            .where(and_(EmailCode.email == email, EmailCode.is_used.is_(False)))
+            .where(
+                and_(
+                    EmailCode.email == email,
+                    EmailCode.is_used.is_(False),
+                )
+            )
             .values(is_used=True)
         )
 
-        row = EmailCode(email=email, code=code, expires_at=expires_at)
-        self._s.add(row)
+        email_code = EmailCode(
+            email=email,
+            code=code,
+            expires_at=expires_at,
+            is_used=False,
+        )
+        self._s.add(email_code)
         self._s.flush()
-        return row
 
-    # верификация
-    def verify_email_code_and_get_user(self, *, email: str, code: str) -> User:
+        return email_code
+
+    def verify(
+        self,
+        *,
+        email: str,
+        code: str,
+    ) -> User:
         now = datetime.now(timezone.utc)
 
         stmt = (
@@ -41,25 +60,46 @@ class AuthStorage:
                     EmailCode.expires_at > now,
                 )
             )
-            .order_by(desc(EmailCode.id))
+            .order_by(desc(EmailCode.created_at), desc(EmailCode.id))
             .limit(1)
-        ) # берем последний выданный юзеру код который еще мб использован
+        )
 
         email_code = self._s.execute(stmt).scalar_one_or_none()
         if email_code is None:
             raise ValueError("Invalid or expired code")
 
-        email_code.is_used = True # используем
+        email_code.is_used = True
 
-        user_stmt = select(User).where(User.email == email).limit(1) # ищем пользователя
-        user = self._s.execute(user_stmt).scalar_one_or_none() # выполняем запрос
-        # если найдено возвращаем если нет None
+        user_stmt = (
+            select(User)
+            .where(User.email == email)
+            .limit(1)
+        )
+        user = self._s.execute(user_stmt).scalar_one_or_none()
 
-        # если нет пользователя
         if user is None:
-            # создаем
-            user = User(email=email, role=UserRole.user)
+            user = User(
+                email=email,
+                name=None,
+                role_id=USER_ROLES["user"],
+            )
             self._s.add(user)
             self._s.flush()
 
         return user
+
+    def get_user_by_email(self, *, email: str) -> User | None:
+        stmt = (
+            select(User)
+            .where(User.email == email)
+            .limit(1)
+        )
+        return self._s.execute(stmt).scalar_one_or_none()
+
+    def get_user_by_id(self, *, user_id) -> User | None:
+        stmt = (
+            select(User)
+            .where(User.id == user_id)
+            .limit(1)
+        )
+        return self._s.execute(stmt).scalar_one_or_none()

@@ -14,9 +14,11 @@ class User(Base):
 
     # поля------------------------
     id: Mapped[uuid.UUID] = mapped_column(
-        primary_key=True
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4
     )
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
 
     role_id: Mapped[int] = mapped_column(
@@ -42,13 +44,13 @@ class User(Base):
     created_places = relationship(
         "Place",
         back_populates="user",
-        foreign_keys="Place.user_id"
+        foreign_keys="Place.id_user"
     )
 
     moderated_places = relationship(
         "Place",
         back_populates="admin",
-        foreign_keys="Place.admin_id"
+        foreign_keys="Place.id_admin"
     )
 
     place_comments = relationship(

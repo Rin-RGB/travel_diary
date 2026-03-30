@@ -10,7 +10,9 @@ class City(Base):
     __tablename__ = "cities"
 
     # поля------------------------
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True,
+                                          default=uuid.uuid4,
+                                          )
     city: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
 
     # связи------------------------

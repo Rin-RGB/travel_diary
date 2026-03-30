@@ -15,7 +15,7 @@ from app.schemas.place import (
     CityResponse,
 )
 
-router = APIRouter(prefix="/places", tags=["Places"])
+router = APIRouter(prefix="/api/v1/places", tags=["Places"])
 
 
 def _get_cover_photo_url(place: Place) -> str | None:
@@ -106,38 +106,6 @@ def get_places(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-    return PlacesListResponse(
-        items=items,
-        page=page,
-        limit=limit,
-        total=total,
-    )
-
-@router.get("", response_model=PlacesListResponse)
-def get_places(
-    q: str | None = Query(default=None),
-    city: UUID | None = Query(default=None),
-    tag: list[UUID] | None = Query(default=None),
-    page: int = Query(default=1, ge=1),
-    limit: int = Query(default=10, ge=1, le=100),
-    sort: str | None = Query(default=None),
-):
-    storage = Storage()
-
-    def _load(ctx):
-        places, total = ctx.places.get_published(
-            page=page,
-            limit=limit,
-            q=q,
-            city=city,
-            tags=tag,
-            sort=sort,
-        )
-        items = [_to_place_list_item(place) for place in places]
-        return items, total
-
-    items, total = storage.run(_load)
 
     return PlacesListResponse(
         items=items,
