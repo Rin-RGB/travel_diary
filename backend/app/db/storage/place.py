@@ -11,7 +11,7 @@ from app.db.models import Place, TagPlace
 
 class PlacesStorage:
     def __init__(self, session: Session) -> None:
-        self._s = session
+        self.session = session
 
     # ОПУБЛИКОВАННЫЕ места
     def get_published(
@@ -60,7 +60,7 @@ class PlacesStorage:
 
         # всего мест
         total_stmt = stmt.with_only_columns(func.count(Place.id)).order_by(None)
-        total = self._s.scalar(total_stmt) or 0
+        total = self.session.scalar(total_stmt) or 0
 
         stmt = (
             stmt.options(
@@ -72,7 +72,7 @@ class PlacesStorage:
             .limit(limit)
         )
 
-        items = list(self._s.scalars(stmt).all())
+        items = list(self.session.scalars(stmt).all())
         return items, total
 
     def get_published_by_id(self, place_id: UUID) -> Place | None:
@@ -91,4 +91,4 @@ class PlacesStorage:
             )
         )
 
-        return self._s.scalar(stmt)
+        return self.session.scalar(stmt)

@@ -6,5 +6,5 @@ from app.db.models import User
 # работа с ПОЛЬЗОВАТЕЛЯМИ
 class UsersStorage:
     def __init__(self, session: Session) -> None:
-        self._s = session
+        self.session = session
 

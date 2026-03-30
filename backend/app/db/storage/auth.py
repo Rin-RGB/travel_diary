@@ -7,7 +7,7 @@ from app.db.models import EmailCode, User
 
 class AuthStorage:
     def __init__(self, session: Session) -> None:
-        self._s = session
+        self.session = session
 
     def create_code(
         self,
@@ -20,7 +20,7 @@ class AuthStorage:
         expires_at = now + timedelta(minutes=ttl_minutes)
 
         # деактивируем все предыдущие
-        self._s.execute(
+        self.session.execute(
             update(EmailCode)
             .where(
                 and_(
@@ -37,8 +37,8 @@ class AuthStorage:
             expires_at=expires_at,
             is_used=False,
         )
-        self._s.add(email_code)
-        self._s.flush()
+        self.session.add(email_code)
+        self.session.flush()
 
         return email_code
 
@@ -64,7 +64,7 @@ class AuthStorage:
             .limit(1)
         )
 
-        email_code = self._s.execute(stmt).scalar_one_or_none()
+        email_code = self.session.execute(stmt).scalar_one_or_none()
         if email_code is None:
             raise ValueError("Invalid or expired code")
 
@@ -75,7 +75,7 @@ class AuthStorage:
             .where(User.email == email)
             .limit(1)
         )
-        user = self._s.execute(user_stmt).scalar_one_or_none()
+        user = self.session.execute(user_stmt).scalar_one_or_none()
 
         if user is None:
             user = User(
@@ -83,8 +83,8 @@ class AuthStorage:
                 name=None,
                 role_id=USER_ROLES["user"],
             )
-            self._s.add(user)
-            self._s.flush()
+            self.session.add(user)
+            self.session.flush()
 
         return user
 
@@ -94,7 +94,7 @@ class AuthStorage:
             .where(User.email == email)
             .limit(1)
         )
-        return self._s.execute(stmt).scalar_one_or_none()
+        return self.session.execute(stmt).scalar_one_or_none()
 
     def get_user_by_id(self, *, user_id) -> User | None:
         stmt = (
@@ -102,4 +102,4 @@ class AuthStorage:
             .where(User.id == user_id)
             .limit(1)
         )
-        return self._s.execute(stmt).scalar_one_or_none()
+        return self.session.execute(stmt).scalar_one_or_none()

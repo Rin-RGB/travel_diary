@@ -9,5 +9,5 @@ from app.db.models import EmailCode
 # КОДЫ
 class EmailCodeStorage:
     def __init__(self, session: Session) -> None:
-        self._s = session
+        self.session = session
 
