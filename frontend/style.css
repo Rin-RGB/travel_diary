@@ -148,7 +148,7 @@ body {
     font-size: 15px;
     line-height: 100%;
     color: var(--text-color);
-    opacity: 0.8;
+    opacity: 0.5gi;
     white-space: nowrap;
     text-align: left;
     width: 100%;
@@ -447,12 +447,6 @@ body {
     color: #ffffff;
 }
 
-.city-toggle-btn:hover {
-    background: var(--accent-color);
-    opacity: 0.8;
-    color: white;
-}
-
 .city-dropdown {
     position: absolute;
     top: 55px;
@@ -594,13 +588,12 @@ body {
     display: flex;
     flex-direction: column;
     width: 100%;
-    max-width: 343px;
     background: var(--card-bg);
     border-radius: 20px;
     box-shadow: var(--card-shadow);
     border: 1px solid var(--border-color);
     overflow: hidden;
-    margin: 0 auto;
+    height: 100%;
 }
 
 .feed-grid.grid-view .post-image {
@@ -611,11 +604,11 @@ body {
 
 .feed-grid.grid-view .post-content {
     width: 100%;
-    height: 422px;
     padding: 16px;
     gap: 16px;
     display: flex;
     flex-direction: column;
+    flex: 1;
     box-sizing: border-box;
 }
 
@@ -654,13 +647,13 @@ body {
     align-items: center;
     padding-top: 12px;
     border-top: 1px solid var(--border-color);
-    margin-top: auto;
 }
 
 .feed-grid.grid-view .post-tags {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+    margin-top: auto;
 }
 
 .feed-grid.grid-view .post-tag {
@@ -669,6 +662,7 @@ body {
     padding: 4px 10px;
     border-radius: 16px;
     color: white;
+    margin-top: auto;
 }
 
 .feed-grid.grid-view .post-date {
@@ -1105,6 +1099,7 @@ body {
     border-radius: 20px;
     font-size: 14px;
     font-weight: 500;
+
 }
 
 .collection-actions {
@@ -1257,25 +1252,6 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
-}
-
-.add-collection-page-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--accent-color);
-    color: white;
-    border: none;
-    border-radius: 30px;
-    padding: 10px 20px;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: opacity 0.2s;
-}
-
-.add-collection-page-btn:hover {
-    opacity: 0.9;
 }
 
 .modal-dialog {
@@ -1614,37 +1590,6 @@ body {
     color: #121212;
 }
 
-/* Кнопка "К ленте" */
-.back-to-feed-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: #ECEDEC;
-    border: none;
-    border-radius: 30px;
-    padding: 8px 16px;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-color);
-    text-decoration: none;
-    cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
-}
-
-[data-theme="dark"] .back-to-feed-btn {
-    color: #2d2d2d;
-}
-
-.back-to-feed-btn i {
-    font-size: 16px;
-}
-
-.back-to-feed-btn:hover {
-    background: var(--accent-color);
-    color: white;
-}
-
 /* Контейнер для левой части top-row */
 .top-row-left {
     display: flex;
@@ -1826,4 +1771,218 @@ body {
 
 .remove-menu-item:hover {
     background: rgba(255, 68, 68, 0.1) !important;
+}
+
+#loginForm .submit-btn {
+    margin-top: 20px;
+}
+
+[data-theme="dark"] .collection-menu-btn {
+    color: #ffffff;
+    background: #748C2E;
+}
+
+/* Кнопки в модальных окнах входа/регистрации */
+.auth-modal .submit-btn {
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 30px;
+    padding: 12px 32px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    width: 100%;
+}
+
+.auth-modal .submit-btn:hover {
+    opacity: 0.9;
+}
+
+[data-theme="dark"] .auth-modal .submit-btn {
+    background: var(--accent-color);
+    color: #121212;
+}
+
+/* Кнопка "Получить код" в модалке входа */
+#sendCodeBtn {
+    background: #ECEDEC;
+    color: var(--text-color);
+    border: none;
+    border-radius: 30px;
+    padding: 12px 32px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+}
+
+#sendCodeBtn:hover {
+    background: var(--accent-color);
+    color: white;
+}
+
+[data-theme="dark"] #sendCodeBtn {
+    background: #3d3d3d;
+    color: #ffffff;
+}
+
+[data-theme="dark"] #sendCodeBtn:hover {
+    background: var(--accent-color);
+    color: #121212;
+}
+
+/* Кнопка закрытия в модальных окнах - как modal-close-btn */
+.auth-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-color);
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.auth-modal-close:hover {
+    background: var(--accent-color);
+    color: white;
+}
+
+[data-theme="dark"] .auth-modal-close {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .auth-modal-close:hover {
+    background: #ffffff;
+    color: #121212;
+}
+
+/* Отступы между полями в модальных окнах */
+.auth-modal .form-group {
+    margin-bottom: 20px;
+}
+
+.auth-modal .form-group:last-of-type {
+    margin-bottom: 24px;
+}
+
+.auth-modal .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.add-place-btn, .admin-manage-btn {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+    width: auto;
+    height: 40px;
+    background: #ECEDEC;
+    border: none;
+    border-radius: 10px;
+    padding-right: 8px;
+    padding-left: 8px;
+    font-size: 16px;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s;
+    opacity: 1;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+
+[data-theme="dark"] .admin-manage-btn {
+    background: #2d2d2d;
+    color: #ffffff;
+}
+
+[data-theme="dark"] .add-place-btn {
+    background: #2d2d2d;
+    color: #ffffff;
+}
+
+.add-collection-page-btn {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+    width: auto;
+    height: 40px;
+    background: #ECEDEC;
+    border: none;
+    border-radius: 10px;
+    padding-right: 8px;
+    padding-left: 8px;
+    font-size: 16px;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s;
+    opacity: 1;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+
+[data-theme="dark"] .add-collection-page-btn {
+    background: #2d2d2d;
+    color: #ffffff;
+}
+
+.back-to-feed-btn {
+display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+    width: auto;
+    height: 40px;
+    background: #ECEDEC;
+    border: none;
+    border-radius: 10px;
+    padding-right: 8px;
+    padding-left: 8px;
+    font-size: 16px;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s;
+    opacity: 1;
+    box-sizing: border-box;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+[data-theme="dark"] .back-to-feed-btn {
+    background: #2d2d2d;
+    color: #ffffff;
+}
+
+.back-to-feed-btn i {
+    font-size: 16px;
+}
+
+/* Стили для превью коллекций */
+.collection-preview {
+    margin-top: 16px;
+}
+.collection-preview-images {
+    display: flex;
+    gap: 8px;
+}
+.preview-image {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 12px;
+}
+.collection-empty-text {
+    color: var(--tag-color);
+    font-size: 14px;
+    padding: 12px 0;
 }
