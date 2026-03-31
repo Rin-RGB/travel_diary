@@ -1,4 +1,4 @@
-console.log('collections.js загружен');
+import apiService from './apiService.js';
 
 // Функция для экранирования HTML
 function escapeHtml(str) {
