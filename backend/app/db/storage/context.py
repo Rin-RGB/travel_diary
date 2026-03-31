@@ -7,6 +7,7 @@ from app.db.storage.email_code import EmailCodeStorage
 from app.db.storage.place import PlacesStorage
 from app.db.storage.folder import FoldersStorage
 from app.db.storage.user import UsersStorage
+from app.db.storage.place_statuses import PlaceStatusesStorage
 from .city import CityStorage
 
 # ВСЕ
@@ -21,3 +22,4 @@ class StorageContext:
         self.tags = TagsStorage(session)
         self.email_codes = EmailCodeStorage(session)
         self.cities = CityStorage(session)
+        self.place_statuses = PlaceStatusesStorage(session)

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from sqlalchemy.testing.suite.test_reflection import users
 
-from app.routers import auth, health, places, folders, cities, users
+from app.routers import auth, health, places, folders, cities, users, place_statuses
 
 app = FastAPI(
     title="Travel Places API",
@@ -14,3 +14,4 @@ app.include_router(places.router)
 app.include_router(folders.router)
 app.include_router(cities.router)
 app.include_router(users.router)
+app.include_router(place_statuses.router)
