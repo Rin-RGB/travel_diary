@@ -16,18 +16,6 @@ function escapeHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
-// Функция для получения цвета тега (копируем из script.js)
-function getTagColorIndex(tag) {
-    const colorMap = {
-        'музей': 1,
-        'театр': 2,
-        'курорт': 3,
-        'вулкан': 4,
-        'водопад': 5
-    };
-    return colorMap[tag] || 'default';
-}
-
 // Инициализация страницы коллекции
 function initCollectionDetail() {
     console.log('initCollectionDetail вызвана');
@@ -66,121 +54,47 @@ function initCollectionDetail() {
     initCollectionLogout();
 }
 
-// Инициализация переключения темы (своя версия)
-function initCollectionThemeToggle() {
-    const themeToggle = document.getElementById('themeToggle');
-    if (!themeToggle) {
-        console.log('Кнопка темы не найдена');
-        return;
-    }
-    
-    const icon = themeToggle.querySelector('i');
-    const savedTheme = localStorage.getItem('theme');
-    
-    // Устанавливаем правильную иконку
-    if (savedTheme === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        if (icon) {
-            icon.classList.remove('bi-moon');
-            icon.classList.add('bi-sun');
-        }
-    }
-    
-    // Удаляем старые обработчики
-    const newToggle = themeToggle.cloneNode(true);
-    themeToggle.parentNode.replaceChild(newToggle, themeToggle);
-    
-    newToggle.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('Переключение темы');
-        
-        const html = document.documentElement;
-        const iconNew = newToggle.querySelector('i');
-        
-        if (html.hasAttribute('data-theme')) {
-            html.removeAttribute('data-theme');
-            if (iconNew) {
-                iconNew.classList.remove('bi-sun');
-                iconNew.classList.add('bi-moon');
-            }
-            localStorage.setItem('theme', 'light');
-        } else {
-            html.setAttribute('data-theme', 'dark');
-            if (iconNew) {
-                iconNew.classList.remove('bi-moon');
-                iconNew.classList.add('bi-sun');
-            }
-            localStorage.setItem('theme', 'dark');
-        }
-    });
-}
-
-// Инициализация выпадающего меню профиля
-function initCollectionProfileDropdown() {
-    const profileBtn = document.getElementById('profileBtn');
-    const dropdown = document.getElementById('dropdownMenu');
-    
-    if (!profileBtn || !dropdown) {
-        console.log('Элементы профиля не найдены');
-        return;
-    }
-    
-    // Удаляем старые обработчики
-    const newProfileBtn = profileBtn.cloneNode(true);
-    profileBtn.parentNode.replaceChild(newProfileBtn, profileBtn);
-    
-    newProfileBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('Клик по кнопке профиля');
-        dropdown.classList.toggle('show');
-    });
-    
-    // Закрытие при клике вне
-    document.addEventListener('click', (e) => {
-        if (!newProfileBtn.contains(e.target) && !dropdown.contains(e.target)) {
-            dropdown.classList.remove('show');
-        }
-    });
-}
-
-// Инициализация выхода
-function initCollectionLogout() {
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        const newLogoutBtn = logoutBtn.cloneNode(true);
-        logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
-        
-        newLogoutBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (confirm('Вы уверены, что хотите выйти?')) {
-                alert('Выход из аккаунта');
-                // Здесь можно добавить логику выхода
-            }
-        });
-    }
-}
-
 // Загрузка постов коллекции
 function loadCollectionPosts() {
+    console.log('loadCollectionPosts вызвана');
+    
+    if (!window.feedPosts) {
+        console.error('window.feedPosts не определен!');
+        const feedGrid = document.getElementById('feedGrid');
+        if (feedGrid) {
+            feedGrid.innerHTML = '<div class="no-posts"><i class="bi bi-exclamation-triangle"></i><h3>Ошибка загрузки</h3><p>Данные о местах не найдены</p></div>';
+        }
+        return;
+    }
+    
+    console.log('window.feedPosts доступен, количество постов:', window.feedPosts.length);
+    
     const postCollections = JSON.parse(localStorage.getItem('postCollections')) || [];
-    const allPosts = window.feedPosts || [];
+    console.log('postCollections из localStorage:', postCollections);
     
     const postIds = postCollections
         .filter(pc => pc.collectionId === currentCollectionId)
         .map(pc => pc.postId);
     
-    currentCollectionPosts = allPosts.filter(post => postIds.includes(post.id));
+    console.log('Найденные ID постов в коллекции:', postIds);
+    
+    currentCollectionPosts = window.feedPosts.filter(post => postIds.includes(post.id));
     
     console.log('Загружено постов в коллекции:', currentCollectionPosts.length);
+    console.log('Посты в коллекции:', currentCollectionPosts);
+    
     renderCollectionFeed();
 }
 
 // Рендер ленты коллекции
 function renderCollectionFeed() {
     const feedGrid = document.getElementById('feedGrid');
-    if (!feedGrid) return;
+    if (!feedGrid) {
+        console.error('Элемент feedGrid не найден');
+        return;
+    }
+    
+    console.log('renderCollectionFeed, количество постов для отображения:', currentCollectionPosts.length);
     
     feedGrid.className = `feed-grid ${currentViewMode}-view`;
     
@@ -206,8 +120,14 @@ function renderCollectionFeed() {
         );
     }
     
+    console.log('Отфильтровано постов:', filteredPosts.length);
+    
     if (filteredPosts.length === 0) {
-        feedGrid.innerHTML = `<div class="no-posts"><i class="bi bi-search"></i><h3>Ничего не найдено</h3><p>В этой коллекции пока нет мест</p></div>`;
+        if (currentCollectionPosts.length === 0) {
+            feedGrid.innerHTML = `<div class="no-posts"><i class="bi bi-folder"></i><h3>Коллекция пуста</h3><p>Добавьте места из ленты, чтобы они появились здесь</p><a href="index.html" class="browse-link">Перейти к ленте →</a></div>`;
+        } else {
+            feedGrid.innerHTML = `<div class="no-posts"><i class="bi bi-search"></i><h3>Ничего не найдено</h3><p>Попробуйте изменить параметры фильтрации</p></div>`;
+        }
         return;
     }
     
@@ -256,6 +176,7 @@ function initCollectionCardClicks() {
                     openPostModal(parseInt(postId));
                 } else {
                     console.error('openPostModal не определена');
+                    alert('Функция открытия модального окна недоступна');
                 }
             }
         });
@@ -271,6 +192,7 @@ window.removeFromCollectionDetail = function(postId) {
         );
         localStorage.setItem('postCollections', JSON.stringify(postCollections));
         
+        console.log('Пост удален из коллекции, загружаем обновленный список');
         loadCollectionPosts();
     }
 };
@@ -325,34 +247,37 @@ function initCollectionCityFilter() {
         });
         
         dropdownContent.innerHTML = html;
-        selectedDisplay.textContent = window.currentCityFilter || 'Все города';
+        if (selectedDisplay) {
+            selectedDisplay.textContent = window.currentCityFilter || 'Все города';
+        }
     }
     
     window.selectCollectionCity = function(city) {
         window.currentCityFilter = city;
         renderCityDropdownContent();
         renderCollectionFeed();
-        cityDropdown.classList.remove('show');
+        if (cityDropdown) cityDropdown.classList.remove('show');
     };
     
-    // Удаляем старые обработчики
     const newCityToggle = cityToggle.cloneNode(true);
     cityToggle.parentNode.replaceChild(newCityToggle, cityToggle);
     
     newCityToggle.addEventListener('click', (e) => {
         e.stopPropagation();
         renderCityDropdownContent();
-        cityDropdown.classList.toggle('show');
+        if (cityDropdown) cityDropdown.classList.toggle('show');
     });
     
     if (closeBtn) {
         const newCloseBtn = closeBtn.cloneNode(true);
         closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
-        newCloseBtn.addEventListener('click', () => cityDropdown.classList.remove('show'));
+        newCloseBtn.addEventListener('click', () => {
+            if (cityDropdown) cityDropdown.classList.remove('show');
+        });
     }
     
     document.addEventListener('click', (e) => {
-        if (!newCityToggle.contains(e.target) && !cityDropdown.contains(e.target)) {
+        if (cityDropdown && !newCityToggle.contains(e.target) && !cityDropdown.contains(e.target)) {
             cityDropdown.classList.remove('show');
         }
     });
@@ -420,8 +345,7 @@ function initCollectionTagsFilter() {
         renderSelectedTags();
         renderCollectionFeed();
     };
-    
-    // Удаляем старые обработчики
+
     const newTagsToggle = tagsToggle.cloneNode(true);
     tagsToggle.parentNode.replaceChild(newTagsToggle, tagsToggle);
     
@@ -457,7 +381,6 @@ function initCollectionViewToggle() {
         return;
     }
     
-    // Удаляем старые обработчики
     const newGridBtn = gridBtn.cloneNode(true);
     const newListBtn = listBtn.cloneNode(true);
     gridBtn.parentNode.replaceChild(newGridBtn, gridBtn);
@@ -491,6 +414,95 @@ function initCollectionSearch() {
         
         newSearchInput.addEventListener('input', () => {
             renderCollectionFeed();
+        });
+    }
+}
+
+// Инициализация переключения темы
+function initCollectionThemeToggle() {
+    const themeToggle = document.getElementById('themeToggle');
+    if (!themeToggle) {
+        console.log('Кнопка темы не найдена');
+        return;
+    }
+    
+    const icon = themeToggle.querySelector('i');
+    const savedTheme = localStorage.getItem('theme');
+    
+    if (savedTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        if (icon) {
+            icon.classList.remove('bi-moon');
+            icon.classList.add('bi-sun');
+        }
+    }
+    
+    const newToggle = themeToggle.cloneNode(true);
+    themeToggle.parentNode.replaceChild(newToggle, themeToggle);
+    
+    newToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const html = document.documentElement;
+        const iconNew = newToggle.querySelector('i');
+        
+        if (html.hasAttribute('data-theme')) {
+            html.removeAttribute('data-theme');
+            if (iconNew) {
+                iconNew.classList.remove('bi-sun');
+                iconNew.classList.add('bi-moon');
+            }
+            localStorage.setItem('theme', 'light');
+        } else {
+            html.setAttribute('data-theme', 'dark');
+            if (iconNew) {
+                iconNew.classList.remove('bi-moon');
+                iconNew.classList.add('bi-sun');
+            }
+            localStorage.setItem('theme', 'dark');
+        }
+    });
+}
+
+// Инициализация выпадающего меню профиля
+function initCollectionProfileDropdown() {
+    const profileBtn = document.getElementById('profileBtn');
+    const dropdown = document.getElementById('dropdownMenu');
+    
+    if (!profileBtn || !dropdown) {
+        console.log('Элементы профиля не найдены');
+        return;
+    }
+    
+    const newProfileBtn = profileBtn.cloneNode(true);
+    profileBtn.parentNode.replaceChild(newProfileBtn, profileBtn);
+    
+    newProfileBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropdown.classList.toggle('show');
+    });
+    
+    document.addEventListener('click', (e) => {
+        if (!newProfileBtn.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.remove('show');
+        }
+    });
+}
+
+// Инициализация выхода
+function initCollectionLogout() {
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        const newLogoutBtn = logoutBtn.cloneNode(true);
+        logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
+        
+        newLogoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (confirm('Вы уверены, что хотите выйти?')) {
+                alert('Выход из аккаунта');
+            }
         });
     }
 }

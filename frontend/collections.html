@@ -33,13 +33,19 @@
                         <a href="index.html" class="dropdown-item">
                             <i class="bi bi-collection"></i> Лента
                         </a>
-                        <a href="settings.html" class="dropdown-item">
-                            <i class="bi bi-gear"></i> Настройки
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="#" class="dropdown-item" id="logoutBtn">
-                            <i class="bi bi-box-arrow-right"></i> Выход
-                        </a>
+                        <div id="authMenuItems">
+                            <a href="#" class="dropdown-item" id="loginMenuItem">
+                                <i class="bi bi-box-arrow-in-right"></i> Вход
+                            </a>
+                            <a href="#" class="dropdown-item" id="registerMenuItem">
+                                <i class="bi bi-person-plus"></i> Регистрация
+                            </a>
+                        </div>
+                        <div id="logoutMenuItem" style="display: none;">
+                            <a href="#" class="dropdown-item" id="logoutBtn">
+                                <i class="bi bi-box-arrow-right"></i> Выход
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -65,5 +71,12 @@
 
     <script src="script.js"></script>
     <script src="collections.js"></script>
+    <script src="auth.js"></script>
+    <script>
+        // Защита страницы - если не авторизован, перенаправляем на ленту
+        if (typeof isAuthenticated === 'function' && !isAuthenticated()) {
+            window.location.href = 'index.html';
+        }
+    </script>
 </body>
 </html>
