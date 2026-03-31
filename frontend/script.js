@@ -1,3 +1,4 @@
+import apiService from './apiService.js';
 
 // Синхронизация коллекций между страницами
 let userCollections = JSON.parse(localStorage.getItem('collections')) || [];
@@ -10,6 +11,43 @@ if (userCollections.length === 0) {
     ];
     localStorage.setItem('collections', JSON.stringify(userCollections));
 }
+
+async function loadFeedFromServer() {
+    const feedGrid = document.getElementById('feedGrid');
+    if (feedGrid) {
+        feedGrid.innerHTML = '<div class="no-posts"><i class="bi bi-hourglass-split"></i><h3>Загрузка...</h3></div>';
+    }
+    
+    const params = {
+        q: filters.search || undefined,
+        city: filters.city || undefined,
+        tag: filters.tags.length > 0 ? filters.tags.join(',') : undefined
+    };
+    
+    const posts = await apiService.loadFeed(params);
+    
+    if (posts.length === 0) {
+        feedGrid.innerHTML = '<div class="no-posts"><i class="bi bi-search"></i><h3>Ничего не найдено</h3><p>Попробуйте изменить параметры</p></div>';
+    } else {
+        window.feedPosts = posts;
+        renderFeed();
+    }
+}
+
+// Загрузка городов
+async function loadCities() {
+    const cities = await apiService.getCities();
+    // Обновляем выпадающий список городов
+    window.citiesList = cities;
+    renderCityDropdown();
+}
+
+// Загрузка тегов
+async function loadTags() {
+    const tags = await apiService.getTags();
+    window.tagsList = tags;
+}
+
 
 // Функция сохранения постов
 function saveFeedPosts() {
@@ -695,14 +733,18 @@ window.removeFromCollection = function(postId, collectionId) {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    renderCityDropdown();
-    renderFeed();
+    await loadCities();
+    await loadTags();
+    await loadFeedFromServer();
     initThemeToggle();
     initProfileDropdown();
     initCityDropdown();
     initTagsDropdown();
     initSearch();
-    initLogout();
-    initViewToggle(); 
+    initViewToggle();
     renderSelectedTags();
+    
+    if (window.updateUIForUser) {
+        window.updateUIForUser();
+    }
 });

@@ -1,3 +1,5 @@
+import apiService from './apiService.js';
+
 if (!localStorage.getItem('feedPosts')) {
     const defaultPosts = [
         {
@@ -228,7 +230,7 @@ function sendLoginCode() {
 }
 
 // Обработка входа с кодом
-function handleLoginWithCode(event) {
+async function handleLoginWithCode(event) {
     event.preventDefault();
     
     const email = document.getElementById('loginEmail').value.trim();
@@ -239,12 +241,33 @@ function handleLoginWithCode(event) {
         return;
     }
     
-    const storedOTP = otpCodes[email];
+    const result = await apiService.login(email, code);
     
-    if (!storedOTP) {
-        alert('Код не найден. Запросите новый код.');
-        return;
+    if (result.success) {
+        currentUser = result.user;
+        updateUIForUser();
+        closeLoginModal();
+        
+        if (window.pendingAuthCallback) {
+            const callback = window.pendingAuthCallback;
+            window.pendingAuthCallback = null;
+            callback();
+        }
+        
+        alert(`Добро пожаловать, ${currentUser.name}!`);
+        
+        if (!window.location.pathname.includes('index.html')) {
+            window.location.href = 'index.html';
+        } else {
+            // Перезагрузка ленты
+            if (typeof loadFeedFromServer === 'function') {
+                loadFeedFromServer();
+            }
+        }
+    } else {
+        alert(result.error);
     }
+}
     
     if (Date.now() > storedOTP.expires) {
         alert('Код истек. Запросите новый код.');
