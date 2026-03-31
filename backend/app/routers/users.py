@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/v1/users", tags=["Users"])
 def get_me(current_user=Depends(get_current_user)):
     storage = Storage()
 
-    def _load(ctx):
+    def _f(ctx):
         stmt = (
             select(User)
             .options(selectinload(User.role))
@@ -36,7 +36,7 @@ def get_me(current_user=Depends(get_current_user)):
             "created_at": user.created_at,
         }
 
-    result = storage.run(_load)
+    result = storage.run(_f)
 
     if result is None:
         raise HTTPException(

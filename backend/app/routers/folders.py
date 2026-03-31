@@ -36,7 +36,7 @@ def get_folders(
         "total": total,
     }
 
-
+# ПЕРЕДЕЛАТЬ
 @router.get("/{id}", response_model=FolderDetailResponse)
 def get_folder_by_id(
     id: UUID,
@@ -78,7 +78,7 @@ def create_folder(
 ):
     storage = Storage()
 
-    def _load(ctx):
+    def _f(ctx):
         folder = ctx.folders.create(
             user_id=current_user.id,
             name=body.name,
@@ -89,7 +89,7 @@ def create_folder(
         )
 
     try:
-        return storage.run(_load)
+        return storage.run(_f)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -105,7 +105,7 @@ def update_folder(
 ):
     storage = Storage()
 
-    def _load(ctx):
+    def _f(ctx):
         folder = ctx.folders.update_name(
             folder_id=folder_id,
             user_id=current_user.id,
@@ -117,7 +117,7 @@ def update_folder(
         )
 
     try:
-        return storage.run(_load)
+        return storage.run(_f)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except PermissionError as e:

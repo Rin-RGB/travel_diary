@@ -18,7 +18,7 @@ router = APIRouter(prefix="/api/v1/cities", tags=["Cities"])
 def get_cities():
     storage = Storage()
 
-    def _load(ctx):
+    def _f(ctx):
         cities = ctx.cities.get_all()
         return [
             CityItemResponse(
@@ -28,14 +28,14 @@ def get_cities():
             for city in cities
         ]
 
-    return storage.run(_load)
+    return storage.run(_f)
 
 
 @router.get("/{city_id}", response_model=CityResponse)
 def get_city(city_id: UUID):
     storage = Storage()
 
-    def _load(ctx):
+    def _f(ctx):
         city = ctx.cities.get_by_id(city_id)
         return CityResponse(
             id=city.id,
@@ -43,7 +43,7 @@ def get_city(city_id: UUID):
         )
 
     try:
-        return storage.run(_load)
+        return storage.run(_f)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -58,7 +58,7 @@ def create_city(
 ):
     storage = Storage()
 
-    def _load(ctx):
+    def _f(ctx):
         city = ctx.cities.create(body.city)
         return CityCreateResponse(
             id=city.id,
@@ -66,7 +66,7 @@ def create_city(
         )
 
     try:
-        return storage.run(_load)
+        return storage.run(_f)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

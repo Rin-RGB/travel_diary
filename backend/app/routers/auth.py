@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import random
 
 from fastapi import APIRouter, HTTPException, Response, status
@@ -23,9 +21,9 @@ from app.schemas.auth import (
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 
 
+# код на почту
 def _generate_code() -> str:
     return str(random.randint(100000, 999999))
-
 
 @router.post("/code", status_code=status.HTTP_204_NO_CONTENT)
 def send_code(body: SendCodeRequest):
@@ -40,6 +38,7 @@ def send_code(body: SendCodeRequest):
         )
     )
 
+    # заглушка
     print(f"[AUTH CODE] {body.email}: {code}")
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -49,7 +48,7 @@ def send_code(body: SendCodeRequest):
 def verify_code(body: VerifyCodeRequest):
     storage = Storage()
 
-    def _verify(ctx):
+    def _f(ctx):
         user = ctx.auth.verify(
             email=body.email,
             code=body.code,
@@ -57,25 +56,19 @@ def verify_code(body: VerifyCodeRequest):
 
         user_data = UserAuthResponse.model_validate(user)
 
-        return {
-            "access_token": create_access_token(str(user_data.id)),
-            "refresh_token": create_refresh_token(str(user_data.id)),
-            "user": user_data,
-        }
+        return AuthResponse(
+            access_token=create_access_token(str(user_data.id)),
+            refresh_token=create_refresh_token(str(user_data.id)),
+            user=user_data,
+        )
 
     try:
-        result = storage.run(_verify)
+        return storage.run(_f)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
-
-    return AuthResponse(
-        access_token=result["access_token"],
-        refresh_token=result["refresh_token"],
-        user=result["user"],
-    )
 
 
 @router.post("/refresh", response_model=RefreshTokenResponse)
@@ -90,19 +83,19 @@ def refresh_token(body: RefreshTokenRequest):
             detail="Invalid refresh token",
         )
 
-    def _load(ctx):
+    def _f(ctx):
         user = ctx.auth.get_user_by_id(user_id=user_id)
         if user is None:
             return None
         return str(user.id)
 
-    user_id_from_db = storage.run(_load)
+    user_id_db = storage.run(_f)
 
-    if user_id_from_db is None:
+    if user_id_db is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
         )
 
-    new_access_token = create_access_token(user_id_from_db)
+    new_access_token = create_access_token(user_id_db)
     return RefreshTokenResponse(access_token=new_access_token)
