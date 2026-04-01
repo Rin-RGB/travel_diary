@@ -31,7 +31,7 @@ def get_place_statuses(
 
 @router.get("/{status_id}", response_model=PlaceStatusResponse)
 def get_place_status(
-    status_id: UUID,
+    status_id: int,
     current_user: UserAuthResponse = Depends(get_current_admin),
 ):
     storage = Storage()

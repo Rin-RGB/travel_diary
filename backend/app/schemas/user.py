@@ -6,7 +6,7 @@ from pydantic import BaseModel, EmailStr
 
 # 5.1 GET /api/v1/users/me
 class UserRoleResponse(BaseModel):
-    id: UUID
+    id: int
     role: str
 
 
