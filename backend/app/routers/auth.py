@@ -3,6 +3,8 @@ import random
 from fastapi import APIRouter, HTTPException, Response, status
 from jose import JWTError
 
+from uuid import UUID
+
 from app.core.security import (
     create_access_token,
     create_refresh_token,
@@ -76,8 +78,8 @@ def refresh_token(body: RefreshTokenRequest):
     storage = Storage()
 
     try:
-        user_id = validate_refresh_token(body.refresh_token)
-    except JWTError:
+        user_id = UUID(validate_refresh_token(body.refresh_token))
+    except (JWTError, ValueError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token",

@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
+from uuid import UUID
+
 from app.core.deps import get_current_user, get_current_admin
 from app.db.models import User
 from app.db.storage.storage import Storage

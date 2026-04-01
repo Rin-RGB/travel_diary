@@ -42,6 +42,6 @@ class UserRoleUpdateResponse(BaseModel):
 
 # 5.5 GET /api/v1/users/roles
 class RoleResponse(BaseModel):
-    id: UUID
+    id: int
     role: str
 

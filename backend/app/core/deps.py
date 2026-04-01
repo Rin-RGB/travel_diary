@@ -1,15 +1,13 @@
+from uuid import UUID
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
 
 from app.core.security import validate_access_token
+from app.core.reference_data import USER_ROLES
 from app.db.storage.storage import Storage
 from app.schemas.auth import UserAuthResponse
-
-from app.core.reference_data import USER_ROLES
-
-from app.db.models import User
-
 
 bearer_scheme = HTTPBearer()
 
@@ -21,7 +19,8 @@ def get_current_user(
 
     try:
         user_id = validate_access_token(token)
-    except JWTError:
+        user_id = UUID(user_id)
+    except (JWTError, ValueError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",
@@ -45,9 +44,10 @@ def get_current_user(
 
     return user
 
+
 def get_current_admin(
-    current_user: User = Depends(get_current_user),
-) -> User:
+    current_user: UserAuthResponse = Depends(get_current_user),
+) -> UserAuthResponse:
     if current_user.role_id != USER_ROLES["admin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
