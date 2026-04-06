@@ -101,3 +101,5 @@ class PlaceUpdateRequest(BaseModel):
     lon: float | None = None
     tags: list[UUID] | None = None
     photo_urls: list[str] | None = None
+
+
