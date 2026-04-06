@@ -37,9 +37,6 @@
                         <a href="collections.html" class="dropdown-item">
                             <i class="bi bi-folder"></i> Коллекции
                         </a>
-                        <a href="settings.html" class="dropdown-item">
-                            <i class="bi bi-gear"></i> Настройки
-                        </a>
                         <div class="dropdown-divider"></div>
                         <a href="#" class="dropdown-item" id="logoutBtn">
                             <i class="bi bi-box-arrow-right"></i> Выход
@@ -141,6 +138,98 @@
                 });
             }
         });
+    </script>
+    <script>
+        // Защита страницы - если не авторизован, перенаправляем на ленту
+        if (typeof isAuthenticated === 'function' && !isAuthenticated()) {
+            window.location.href = 'index.html';
+        }
+    </script>
+    <script src="script.js"></script>
+    <script src="auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('placeImage');
+            const fileName = document.getElementById('fileName');
+            let uploadedImageData = null;
+            
+            if (fileInput) {
+                fileInput.addEventListener('change', function() {
+                    if (this.files && this.files[0]) {
+                        const file = this.files[0];
+                        fileName.textContent = file.name;
+                        
+                        // Преобразуем изображение в base64 для сохранения
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            uploadedImageData = e.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        fileName.textContent = 'Файл не выбран';
+                        uploadedImageData = null;
+                    }
+                });
+            }
+
+            // Обработка отправки формы
+            const form = document.getElementById('suggestForm');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const title = document.getElementById('placeTitle').value.trim();
+                    const city = document.getElementById('placeCity').value.trim();
+                    const description = document.getElementById('placeDescription').value.trim();
+                    
+                    if (!title || !city) {
+                        alert('Пожалуйста, заполните обязательные поля (название и город)');
+                        return;
+                    }
+                    
+                    // Создаем новый пост
+                    const newPost = {
+                        id: Date.now(),
+                        title: title,
+                        city: city,
+                        description: description || 'Новое место',
+                        image: uploadedImageData || 'https://via.placeholder.com/400x200?text=Новое+место',
+                        date: new Date().toLocaleDateString('ru-RU'),
+                        address: '',
+                        tags: []
+                    };
+                    
+                    // Добавляем в ленту
+                    if (window.feedPosts) {
+                        window.feedPosts.push(newPost);
+                        localStorage.setItem('feedPosts', JSON.stringify(window.feedPosts));
+                        alert('Спасибо! Ваше предложение отправлено на рассмотрение модераторам сайта.');
+                    } else {
+                        alert('Ошибка: данные не загружены');
+                        return;
+                    }
+                    
+                    form.reset();
+                    fileName.textContent = 'Файл не выбран';
+                    uploadedImageData = null;
+                });
+            }
+        });
+    </script>
+    <script>
+        // Защита страницы - только для администраторов
+        if (typeof isAdmin === 'function') {
+            if (!isAdmin()) {
+                alert('Только администраторы могут предлагать места');
+                window.location.href = 'index.html';
+            }
+        } else {
+            setTimeout(() => {
+                if (typeof isAdmin === 'function' && !isAdmin()) {
+                    alert('Только администраторы могут предлагать места');
+                    window.location.href = 'index.html';
+                }
+            }, 100);
+        }
     </script>
 </body>
 </html>

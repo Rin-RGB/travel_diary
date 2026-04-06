@@ -1,67 +1,15 @@
-console.log('collections.js загружен');
+import apiService from './apiService.js';
 
-const collectionsFeedPosts = window.feedPosts || [
-    {
-        id: 1,
-        title: 'Музей Михаила Булгакова',
-        city: 'Москва',
-        description: 'Первый и единственный государственный мемориальный музей Булгакова в России, учрежденный в 2007 году в пространстве легендарной квартиры №50 в доме 10 на Большой Садовой.',
-        image: 'images/bulgakov.jpg',
-        date: '12 марта 2025',
-        address: 'Большая Садовая ул., 10, 50',
-        tags: ['музей']
-    },
-    {
-        id: 2,
-        title: 'Большой театр',
-        city: 'Москва',
-        description: 'Один из крупнейших и старейших в России и один из самых значительных в мире театров оперы и балета.',
-        image: 'images/bolshoj-teatr.webp',
-        date: '5 марта 2025',
-        address: 'Театральная пл., 1',
-        tags: ['театр']
-    },
-    {
-        id: 3,
-        title: 'Роза Хутор',
-        city: 'Сочи',
-        description: 'Курорт, расположенный на берегах реки Мзымта и горных склонах к югу от неё в Адлерском районе Сочи.',
-        image: 'images/roza-hutor.jpg',
-        date: '28 января 2025',
-        address: '',
-        tags: ['курорт']
-    },
-    {
-        id: 4,
-        title: 'Вулкан Бакенинг',
-        city: 'Камчатка',
-        description: 'Потухший стратовулкан на востоке полуострова Камчатка.',
-        image: 'images/bakening.jpg',
-        date: '17 ноября 2024',
-        address: '',
-        tags: ['вулкан']
-    },
-    {
-        id: 5,
-        title: 'Агурские водопады',
-        city: 'Сочи',
-        description: 'Каскад водопадов на реке Агура в Хостинском районе города Сочи.',
-        image: 'images/agurskij-waterfall.jpg',
-        date: '5 августа 2024',
-        address: '',
-        tags: ['водопад']
-    },
-    {
-        id: 6,
-        title: 'Музей Мирового океана',
-        city: 'Калининград',
-        description: 'Первый в России комплексный маринистический музей-заповедник, расположенный в Калининградской области.',
-        image: 'images/musej-mirovogo-okeana.jpg',
-        date: '1 июля 2024',
-        address: 'наб. Петра Великого, 1',
-        tags: ['музей']
-    }
-];
+// Функция для экранирования HTML
+function escapeHtml(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
 
 // Загружаем коллекции
 window.userCollections = JSON.parse(localStorage.getItem('collections')) || [
@@ -76,6 +24,11 @@ if (JSON.parse(localStorage.getItem('collections')) === null) {
     localStorage.setItem('collections', JSON.stringify(window.userCollections));
 }
 
+// Функция получения постов (ждет загрузки window.feedPosts)
+function getFeedPosts() {
+    return window.feedPosts || [];
+}
+
 // Функция рендеринга списка коллекций
 function renderCollectionsList() {
     const container = document.getElementById('collectionsList');
@@ -84,19 +37,22 @@ function renderCollectionsList() {
         return;
     }
 
+    const posts = getFeedPosts();
+    console.log('Постов для отображения:', posts.length);
+
     let html = '';
     window.userCollections.forEach(collection => {
         const postIds = (window.postCollections || [])
             .filter(pc => pc.collectionId === collection.id)
             .map(pc => pc.postId);
-        const posts = collectionsFeedPosts.filter(post => postIds.includes(post.id));
+        const collectionPosts = posts.filter(post => postIds.includes(post.id));
 
         html += `
             <div class="collection-card" data-collection-id="${collection.id}">
                 <div class="collection-header">
                     <div class="collection-title-wrapper">
                         <h2 class="collection-title">${escapeHtml(collection.name)}</h2>
-                        <span class="collection-count">${posts.length}</span>
+                        <span class="collection-count">${collectionPosts.length}</span>
                     </div>
                     ${collection.editable ? `
                         <div class="collection-actions-dropdown">
@@ -113,28 +69,6 @@ function renderCollectionsList() {
                             </div>
                         </div>
                     ` : ''}
-                </div>
-
-                <div class="collection-posts">
-                    ${posts.length > 0 ? `
-                        <div class="collection-posts-list">
-                            ${posts.map(post => `
-                                <div class="collection-post-item">
-                                    <img src="${post.image}" alt="${escapeHtml(post.title)}" class="collection-post-image" onerror="this.src='https://via.placeholder.com/80x80?text=Фото'">
-                                    <div class="collection-post-info">
-                                        <h4 class="collection-post-title">${escapeHtml(post.title)}</h4>
-                                        <div class="collection-post-meta">
-                                            <span>${escapeHtml(post.city)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    ` : `
-                        <div class="collection-empty">
-                            <p>В этой коллекции пока нет мест</p>
-                        </div>
-                    `}
                 </div>
             </div>
         `;
@@ -160,17 +94,6 @@ window.openCollectionDetail = function(collectionId) {
     console.log('Открываем коллекцию:', collectionId);
     window.location.href = `collection_detail.html?id=${collectionId}`;
 };
-
-// Функция для экранирования HTML (безопасность)
-function escapeHtml(str) {
-    if (!str) return '';
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
 
 // Функция для переключения видимости меню 
 window.toggleCollectionMenu = function(collectionId) {
@@ -243,10 +166,59 @@ window.addCollection = function() {
     }
 };
 
+// Добавляем стили для превью коллекций
+function addCollectionStyles() {
+    if (document.getElementById('collection-preview-styles')) return;
+    
+    const styles = document.createElement('style');
+    styles.id = 'collection-preview-styles';
+    styles.textContent = `
+        .collection-preview {
+            margin-top: 16px;
+        }
+        .collection-preview-images {
+            display: flex;
+            gap: 8px;
+        }
+        .preview-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 12px;
+        }
+        .collection-empty-text {
+            color: var(--tag-color);
+            font-size: 14px;
+            padding: 12px 0;
+        }
+    `;
+    document.head.appendChild(styles);
+}
+
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM загружен, инициализация collections');
-    renderCollectionsList();
+    addCollectionStyles();
+    
+    // Ждем загрузки window.feedPosts
+    function checkAndRender() {
+        if (window.feedPosts && window.feedPosts.length > 0) {
+            renderCollectionsList();
+        } else {
+            // Если посты еще не загружены, ждем немного и пробуем снова
+            setTimeout(() => {
+                if (window.feedPosts) {
+                    renderCollectionsList();
+                } else {
+                    console.warn('Посты не загружены, создаем пустой массив');
+                    window.feedPosts = [];
+                    renderCollectionsList();
+                }
+            }, 100);
+        }
+    }
+    
+    checkAndRender();
     
     const addBtn = document.getElementById('addCollectionPageBtn');
     if (addBtn) {

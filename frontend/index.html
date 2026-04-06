@@ -36,16 +36,22 @@
                         <i class="bi bi-person"></i>
                     </button>
                     <div class="dropdown-menu" id="dropdownMenu">
-                        <a href="collections.html" class="dropdown-item">
+                        <a href="collections.html" class="dropdown-item" id="collectionsMenuItem">
                             <i class="bi bi-folder"></i> Коллекции
                         </a>
-                        <a href="settings.html" class="dropdown-item">
-                            <i class="bi bi-gear"></i> Настройки
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="#" class="dropdown-item" id="logoutBtn">
-                            <i class="bi bi-box-arrow-right"></i> Выход
-                        </a>
+                        <div id="authMenuItems">
+                            <a href="#" class="dropdown-item" id="loginMenuItem">
+                                <i class="bi bi-box-arrow-in-right"></i> Вход
+                            </a>
+                            <a href="#" class="dropdown-item" id="registerMenuItem">
+                                <i class="bi bi-person-plus"></i> Регистрация
+                            </a>
+                        </div>
+                        <div id="logoutMenuItem" style="display: none;">
+                            <a href="#" class="dropdown-item" id="logoutBtn">
+                                <i class="bi bi-box-arrow-right"></i> Выход
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -54,19 +60,31 @@
         <!-- Основной контейнер с карточками -->
         <div class="content-container">
             <div class="top-row">
-                <h2 class="section-title" id="cityTitle">Лента</h2> 
-                <!-- Фильтр по тегам -->
-                <div class="filter-tags">
-                    <button class="tags-toggle-btn" id="tagsToggleBtn">
-                        <i class="bi bi-sliders2"></i>
-                        <span>Фильтр по тегам</span>
+                <div class="top-row-left">
+                    <h2 class="section-title" id="cityTitle">Лента</h2>
+                </div>
+                <div class="top-row-right" style="display: flex; gap: 12px;">
+                    <!-- Кнопка "Предложить место" - для всех авторизованных -->
+                    <button class="add-place-btn" id="suggestPlaceBtn" style="display: none;">
+                        <i class="bi bi-plus-circle"></i> Добавить место
                     </button>
-                    <div class="tags-dropdown" id="tagsDropdown">
-                        <div class="tags-dropdown-header">
-                            <span>Выберите теги</span>
-                            <button class="close-dropdown" id="closeTagsDropdown">✕</button>
+                    <!-- Кнопка "Администраторы" - только для админов -->
+                    <button class="admin-manage-btn" id="adminManageBtn" style="display: none;">
+                        <i class="bi bi-shield-lock"></i> Администраторы
+                    </button>
+                    <!-- Фильтр по тегам -->
+                    <div class="filter-tags">
+                        <button class="tags-toggle-btn" id="tagsToggleBtn">
+                            <i class="bi bi-sliders2"></i>
+                            <span>Фильтр по тегам</span>
+                        </button>
+                        <div class="tags-dropdown" id="tagsDropdown">
+                            <div class="tags-dropdown-header">
+                                <span>Выберите теги</span>
+                                <button class="close-dropdown" id="closeTagsDropdown">✕</button>
+                            </div>
+                            <div class="tags-dropdown-content" id="tagsDropdownContent"></div>
                         </div>
-                        <div class="tags-dropdown-content" id="tagsDropdownContent"></div>
                     </div>
                 </div>
             </div>
@@ -105,6 +123,83 @@
             <div id="feedGrid" class="feed-grid"></div>
         </div>
     </div>
+
+    <!-- Модальное окно для входа -->
+    <div id="loginModal" class="auth-modal" style="display: none;">
+        <div class="auth-modal-content">
+            <div class="auth-modal-header">
+                <h2>Вход в аккаунт</h2>
+                <button class="auth-modal-close" onclick="closeLoginModal()">✕</button>
+            </div>
+            <div class="auth-modal-body">
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="loginEmail">Email</label>
+                        <input type="email" id="loginEmail" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginCode">Код подтверждения</label>
+                        <input type="text" id="loginCode" class="form-input" placeholder="Введите 6-значный код" maxlength="6" style="display: none;">
+                    </div>
+                    <button type="button" id="sendCodeBtn" class="submit-btn" onclick="sendLoginCode()" style="width: 100%;">Получить код</button>
+                    <button type="submit" id="loginSubmitBtn" class="submit-btn" style="width: 100%; display: none; margin-top: 16px;">Войти</button>
+                    <p class="otp-info" style="font-size: 12px; color: var(--tag-color); text-align: center; margin-top: 12px;">Код будет отправлен на указанный email</p>
+                </form>
+                <p class="auth-switch" style="text-align: center; margin-top: 20px;">Нет аккаунта? <a href="#" onclick="switchToRegister()" style="color: var(--accent-color);">Зарегистрироваться</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для регистрации -->
+    <div id="registerModal" class="auth-modal" style="display: none;">
+        <div class="auth-modal-content">
+            <div class="auth-modal-header">
+                <h2>Регистрация</h2>
+                <button class="auth-modal-close" onclick="closeRegisterModal()">✕</button>
+            </div>
+            <div class="auth-modal-body">
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label for="registerName">Имя</label>
+                        <input type="text" id="registerName" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerEmail">Email</label>
+                        <input type="email" id="registerEmail" class="form-input" required>
+                    </div>
+                    <button type="submit" class="submit-btn" style="width: 100%;">Зарегистрироваться</button>
+                </form>
+                <p class="auth-switch" style="text-align: center; margin-top: 20px;">Уже есть аккаунт? <a href="#" onclick="switchToLogin()" style="color: var(--accent-color);">Войти</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для управления администраторами -->
+    <div id="adminManageModal" class="auth-modal" style="display: none;">
+        <div class="auth-modal-content">
+            <div class="auth-modal-header">
+                <h2>Редактирование состава администраторов</h2>
+                <button class="auth-modal-close" onclick="closeAdminManageModal()">✕</button>
+            </div>
+            <div class="auth-modal-body">
+                <form id="adminManageForm">
+                    <div class="form-group">
+                        <label for="adminEmail">Email администратора</label>
+                        <input type="email" id="adminEmail" class="form-input" placeholder="example@mail.com">
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <button type="button" class="submit-btn" onclick="addAdmin()" style="flex: 1;">Добавить</button>
+                        <button type="button" class="submit-btn" onclick="removeAdmin()" style="flex: 1; background: #ff4444;">Удалить</button>
+                    </div>
+                </form>
+                <div id="adminListContainer" style="margin-top: 20px;">
+                    <h4>Текущие администраторы:</h4>
+                    <ul id="adminList" style="list-style: none; padding: 0;"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Модальное окно для карточки места -->
     <div id="postModal" class="modal-dialog" role="dialog" aria-labelledby="modalTitle" aria-modal="true" aria-hidden="true" tabindex="-1">
         <div class="modal-content-custom">
@@ -118,6 +213,7 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
+    <script type="module" src="auth.js"></script>
 </body>
 </html>
