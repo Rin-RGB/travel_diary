@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import and_, desc, select, update
 from sqlalchemy.orm import Session
 from app.core.reference_data import USER_ROLES
-from app.db.models import EmailCode, User
+from app.db.models import EmailCode, User, Folder
 
 
 class AuthStorage:
@@ -78,13 +78,25 @@ class AuthStorage:
         user = self.session.execute(user_stmt).scalar_one_or_none()
 
         if user is None:
+            local_part = email.split("@")[0]
+
             user = User(
+                name=local_part,
                 email=email,
-                name=None,
                 role_id=USER_ROLES["user"],
             )
+
             self.session.add(user)
             self.session.flush()
+
+            # Создание 3 системных папок УРА я не забыла
+            system_folders = [
+                Folder(name="Хочу посетить", id_user=user.id),
+                Folder(name="Посещено", id_user=user.id),
+                Folder(name="Избранное", id_user=user.id),
+            ]
+            self.session.add_all(system_folders)
+        self.session.flush()
 
         return user
 

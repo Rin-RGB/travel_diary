@@ -36,7 +36,7 @@ def get_folders(
         "total": total,
     }
 
-
+# ПЕРЕДЕЛАТЬ
 @router.get("/{id}", response_model=FolderDetailResponse)
 def get_folder_by_id(
     id: UUID,
@@ -78,17 +78,24 @@ def create_folder(
 ):
     storage = Storage()
 
-    folder = storage.run(
-        lambda ctx: ctx.folders.create(
+    def _f(ctx):
+        folder = ctx.folders.create(
             user_id=current_user.id,
             name=body.name,
         )
-    )
+        return FolderCreateResponse(
+            id=folder.id,
+            name=folder.name,
+        )
 
-    return FolderCreateResponse(
-        id=folder.id,
-        name=folder.name,
-    )
+    try:
+        return storage.run(_f)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
 
 @router.patch("/{folder_id}", response_model=FolderUpdateResponse)
 def update_folder(
@@ -98,23 +105,23 @@ def update_folder(
 ):
     storage = Storage()
 
-    try:
-        folder = storage.run(
-            lambda ctx: ctx.folders.update_name(
-                folder_id=folder_id,
-                user_id=current_user.id,
-                name=body.name,
-            )
+    def _f(ctx):
+        folder = ctx.folders.update_name(
+            folder_id=folder_id,
+            user_id=current_user.id,
+            name=body.name,
         )
+        return FolderUpdateResponse(
+            id=folder.id,
+            name=folder.name,
+        )
+
+    try:
+        return storage.run(_f)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
-
-    return FolderUpdateResponse(
-        id=folder.id,
-        name=folder.name,
-    )
 
 @router.post("/{folder_id}/places/{place_id}", status_code=status.HTTP_204_NO_CONTENT)
 def add_place_to_folder(

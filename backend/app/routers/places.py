@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
@@ -88,7 +86,7 @@ def get_places(
 ):
     storage = Storage()
 
-    def _load(ctx):
+    def _f(ctx):
         places, total = ctx.places.get_published(
             page=page,
             limit=limit,
@@ -101,7 +99,7 @@ def get_places(
         return items, total
 
     try:
-        items, total = storage.run(_load)
+        items, total = storage.run(_f)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -120,13 +118,13 @@ def get_places(
 def get_place_by_id(place_id: UUID):
     storage = Storage()
 
-    def _load(ctx):
+    def _f(ctx):
         place = ctx.places.get_published_by_id(place_id)
         if place is None:
             return None
         return _to_place_detail(place)
 
-    result = storage.run(_load)
+    result = storage.run(_f)
 
     if result is None:
         raise HTTPException(status_code=404, detail="Place not found")

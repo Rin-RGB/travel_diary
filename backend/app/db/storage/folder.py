@@ -1,5 +1,4 @@
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
 from sqlalchemy.orm import selectinload
 
 from uuid import UUID
@@ -105,12 +104,20 @@ class FoldersStorage:
 
         items = []
         for place in places:
+            cover_photo = next(
+                (photo.url for photo in place.photos if photo.is_cover),
+                None,
+            )
+
+            if cover_photo is None and place.photos:
+                cover_photo = place.photos[0].url
+
             items.append(
                 {
                     "id": place.id,
                     "name": place.name,
                     "city": place.city.city,
-                    "cover_photo": place.photos[0].url if place.photos else None,
+                    "cover_photo": cover_photo,
                     "tags": [tp.tag.name for tp in place.tag_places],
                 }
             )
@@ -124,35 +131,19 @@ class FoldersStorage:
             "total": total,
         }
 
-    def create_folder(
-            self,
-            user_id: UUID,
-            name: str,
-    ):
-        # проверка уникальности имени у пользователя
+
+
+    def create(self, *, user_id: UUID, name: str) -> Folder:
+        # проверка название совпадения с существующими
         existing_stmt = select(Folder).where(
             Folder.id_user == user_id,
             Folder.name == name,
         )
         existing = self.session.execute(existing_stmt).scalar_one_or_none()
 
-        if existing:
+        if existing is not None:
             raise ValueError("Folder with this name already exists")
 
-        folder = Folder(
-            name=name,
-            id_user=user_id,
-        )
-
-        self.session.add(folder)
-        self.session.flush()  # чтобы получить id
-
-        return {
-            "id": folder.id,
-            "name": folder.name,
-        }
-
-    def create(self, *, user_id: UUID, name: str) -> Folder:
         folder = Folder(
             id=uuid4(),
             name=name,
@@ -173,6 +164,17 @@ class FoldersStorage:
 
         if folder.id_user != user_id:
             raise PermissionError("No access to this folder")
+
+        # проверка совпадения имен
+        existing_stmt = select(Folder).where(
+            Folder.id_user == user_id,
+            Folder.name == name,
+            Folder.id != folder_id,
+        )
+        existing = self.session.execute(existing_stmt).scalar_one_or_none()
+
+        if existing is not None:
+            raise ValueError("Folder with this name already exists")
 
         folder.name = name
 

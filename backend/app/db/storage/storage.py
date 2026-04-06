@@ -10,7 +10,7 @@ class Storage:
         session = self._session_factory()
         try:
             ctx = StorageContext(session=session)
-            result = fn(ctx) # переданная функция (из context), действие
+            result = fn(ctx)
             session.commit()
             return result
         except Exception:
