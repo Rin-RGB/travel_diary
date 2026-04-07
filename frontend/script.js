@@ -732,7 +732,7 @@ window.removeFromCollection = function(postId, collectionId) {
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     await loadCities();
     await loadTags();
     await loadFeedFromServer();

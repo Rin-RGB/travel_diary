@@ -37,7 +37,7 @@ class ApiService {
     // Загрузка ленты
     async loadFeed(params = {}) {
         try {
-            const response = await api.getFeed(params);
+            const response = await api.getPlaces(params);
             this.posts = response.items || [];
             return this.posts;
         } catch (error) {

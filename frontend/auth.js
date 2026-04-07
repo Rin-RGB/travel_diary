@@ -267,7 +267,6 @@ async function handleLoginWithCode(event) {
     } else {
         alert(result.error);
     }
-}
     
     if (Date.now() > storedOTP.expires) {
         alert('Код истек. Запросите новый код.');
