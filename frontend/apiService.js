@@ -35,7 +35,7 @@ class ApiService {
     }
 
     // Загрузка ленты
-    async loadFeed(params = {}) {
+    async loadPlaces(params = {}) {
         try {
             const response = await api.getPlaces(params);
             this.posts = response.items || [];

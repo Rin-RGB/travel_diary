@@ -24,14 +24,37 @@ async function loadFeedFromServer() {
         tag: filters.tags.length > 0 ? filters.tags.join(',') : undefined
     };
     
-    const posts = await apiService.loadFeed(params);
+    const posts = await apiService.loadPlaces(params); //тимлид опять (слово, чтобы искать было проще)
+
+    // Нормализуем city
+    const normalizedPosts = posts.map(post => ({
+        ...post,
+        city: typeof post.city === 'object' ? post.city?.city || '' : post.city || ''
+    }));
+
+
+
+
     
     if (posts.length === 0) {
         feedGrid.innerHTML = '<div class="no-posts"><i class="bi bi-search"></i><h3>Ничего не найдено</h3><p>Попробуйте изменить параметры</p></div>';
     } else {
-        window.feedPosts = posts;
+        //window.feedPosts = posts;
+        window.feedPosts = normalizedPosts; //тимлид
         renderFeed();
     }
+}
+function escapeHtml(str) { //Это я(даша, которая тимлид) эксперименты ставлю, если забуду удалить - извините
+    // Если str не строка и не число, возвращаем пустую строку
+    if (str === undefined || str === null) return '';
+    // Превращаем в строку, если это число
+    const stringValue = String(str);
+    return stringValue
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 // Загрузка городов
@@ -47,6 +70,8 @@ async function loadTags() {
     const tags = await apiService.getTags();
     window.tagsList = tags;
 }
+
+
 
 
 // Функция сохранения постов
@@ -215,7 +240,7 @@ function renderFeed() {
     feedGrid.className = `feed-grid ${viewMode}-view`;
 
     const filteredPosts = window.feedPosts.filter(post => {
-        const matchesSearch = post.title.toLowerCase().includes(filters.search.toLowerCase());
+        const matchesSearch = post.name.toLowerCase().includes(filters.search.toLowerCase());
         const matchesCity = !filters.city || post.city === filters.city;
         const matchesTags = filters.tags.length === 0 || 
             filters.tags.some(tag => post.tags.includes(tag));
@@ -232,10 +257,10 @@ function renderFeed() {
 
     feedGrid.innerHTML = filteredPosts.map(post => `
         <div class="post-card" data-post-id="${post.id}">
-            <img src="${post.image}" alt="${post.title}" class="post-image" onerror="this.src='https://via.placeholder.com/400x200?text=Фото+не+доступно'">
+            <img src="${post.cover_photo}" alt="${post.name}" class="post-cover_photo" onerror="this.src='https://via.placeholder.com/400x200?text=Фото+не+доступно'">
             <div class="post-content">
                 <div class="post-header">
-                    <h3 class="post-title">${escapeHtml(post.title)}</h3>
+                    <h3 class="post-name">${escapeHtml(post.name)}</h3>
                     ${isAdminUser ? `
                         <div class="post-actions-dropdown">
                             <button class="post-menu-btn" onclick="event.stopPropagation(); togglePostMenu(${post.id})">
@@ -348,11 +373,11 @@ function editPost(postId) {
     }
     
     // Заполняем форму текущими данными
-    document.getElementById('editTitle').value = post.title;
+    document.getElementById('editTitle').value = post.name;
     document.getElementById('editCity').value = post.city;
     document.getElementById('editAddress').value = post.address || '';
     document.getElementById('editDescription').value = post.description;
-    document.getElementById('editImageURL').value = post.image;
+    document.getElementById('editImageURL').value = post.cover_photo;
     
     // Отмечаем теги
     const checkboxes = document.querySelectorAll('#editTags input');
@@ -373,19 +398,19 @@ function editPost(postId) {
     newForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
-        const title = document.getElementById('editTitle').value.trim();
+        const name = document.getElementById('editTitle').value.trim();
         const city = document.getElementById('editCity').value.trim();
         const address = document.getElementById('editAddress').value.trim();
         const description = document.getElementById('editDescription').value.trim();
-        let image = document.getElementById('editImageURL').value.trim();
+        let cover_photo = document.getElementById('editImageURL').value.trim();
         
-        if (!title || !city) {
+        if (!name || !city) {
             alert('Пожалуйста, заполните обязательные поля (название и город)');
             return;
         }
         
-        if (!image) {
-            image = 'https://via.placeholder.com/400x200?text=Новое+место';
+        if (!cover_photo) {
+            cover_photo = 'https://via.placeholder.com/400x200?text=Новое+место';
         }
         
         const selectedTags = Array.from(document.querySelectorAll('#editTags input:checked')).map(cb => cb.value);
@@ -399,11 +424,11 @@ function editPost(postId) {
         if (postIndex !== -1) {
             window.feedPosts[postIndex] = {
                 ...window.feedPosts[postIndex],
-                title: title,
+                name: name,
                 city: city,
                 address: address,
                 description: description,
-                image: image,
+                cover_photo: cover_photo,
                 tags: selectedTags
             };
             
@@ -431,7 +456,7 @@ function deletePost(postId) {
     
     const postIndex = window.feedPosts.findIndex(p => p.id === postId);
     if (postIndex !== -1) {
-        const postTitle = window.feedPosts[postIndex].title;
+        const postTitle = window.feedPosts[postIndex].name;
         window.feedPosts.splice(postIndex, 1);
         
         // Сохраняем в localStorage
@@ -478,7 +503,7 @@ function openPostModal(postId) {
     const modalContent = document.getElementById('modalContent');
     
     if (modalTitle) {
-        modalTitle.textContent = post.title;
+        modalTitle.textContent = post.name;
     }
     
     let overlay = document.querySelector('.modal-overlay');
@@ -509,7 +534,7 @@ function openPostModal(postId) {
                     </div>
                 </div>
             ` : ''}
-            <img src="${post.image}" alt="${post.title}" style="width:100%; max-height:300px; object-fit:cover; border-radius:16px; margin-bottom:16px;">
+            <img src="${post.cover_photo}" alt="${post.name}" style="width:100%; max-height:300px; object-fit:cover; border-radius:16px; margin-bottom:16px;">
         </div>
         <div class="post-city" style="color:var(--accent-color); margin-bottom:8px; font-weight:500;">${post.city}</div>
         <p style="margin-bottom:16px;">${post.description}</p>

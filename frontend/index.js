@@ -27,7 +27,7 @@ apiClient.interceptors.response.use(
             if (refreshToken) {
                 try {
                     const response = await axios.post(
-                        "http://localhost:3000/api/v1/auth/refresh",
+                        "http://localhost:8000/api/v1/auth/refresh",
                         { refresh_token: refreshToken }
                     );
                     
@@ -87,10 +87,10 @@ export const api = {
     },
 
     //2.2
-    getFeed: async (params = {}) => {
-        let response = await apiClient.get("/v1/places/feed", { params });
-        return response.data;
-    },
+    // getFeed: async (params = {}) => {
+    //     let response = await apiClient.get("/v1/places/feed", { params });
+    //     return response.data;
+    // },
     
     //2.3
     getCard: async (id) => {
@@ -100,7 +100,7 @@ export const api = {
     
     //2.4
     createPlaceAdmin: async (placeData) => {
-        let response = await apiClient.post("/api/v1/places", placeData);
+        let response = await apiClient.post("/v1/places", placeData);
         return response.data;
     },
     
@@ -157,7 +157,7 @@ export const api = {
 
     //4.2
     getOneCollection: async(id, params = {}) => {
-        let response = await apiClient.get(`/v1/folders/${id}`, params = {});
+        let response = await apiClient.get(`/v1/folders/${id}`, { params });
         return response.data;
     },
 
