@@ -602,6 +602,12 @@ body {
     object-fit: cover;
 }
 
+.feed-grid.grid-view .post-cover_photo {
+    width: 100%;
+    height: 260px;
+    object-fit: cover;
+}
+
 .feed-grid.grid-view .post-content {
     width: 100%;
     padding: 16px;
@@ -689,6 +695,13 @@ body {
 }
 
 .feed-grid.list-view .post-image {
+    width: 280px;  
+    height: 200px;
+    object-fit: cover;
+    border-radius: 18px;
+}
+
+.feed-grid.list-view .post-cover_photo {
     width: 280px;  
     height: 200px;
     object-fit: cover;
