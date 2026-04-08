@@ -837,3 +837,17 @@ function addAuthStyles() {
     `;
     document.head.appendChild(styles);
 }
+
+// Делаем функции глобальными
+window.sendLoginCode = sendLoginCode;
+window.closeLoginModal = closeLoginModal;
+window.handleLoginWithCode = handleLoginWithCode;
+window.switchToRegister = switchToRegister;
+window.switchToLogin = switchToLogin;
+window.closeRegisterModal = closeRegisterModal;
+window.openAdminManageModal = openAdminManageModal;
+window.closeAdminManageModal = closeAdminManageModal;
+window.addAdmin = addAdmin;
+window.removeAdmin = removeAdmin;
+window.openAddPlaceModal = openAddPlaceModal;
+window.closeAddPlaceModal = closeAddPlaceModal;
