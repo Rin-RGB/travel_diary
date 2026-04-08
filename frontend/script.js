@@ -17,33 +17,39 @@ async function loadFeedFromServer() {
     if (feedGrid) {
         feedGrid.innerHTML = '<div class="no-posts"><i class="bi bi-hourglass-split"></i><h3>Загрузка...</h3></div>';
     }
-    
+
     const params = {
         q: filters.search || undefined,
         city: filters.city || undefined,
         tag: filters.tags.length > 0 ? filters.tags.join(',') : undefined
     };
-    
+
     const posts = await apiService.loadPlaces(params); //тимлид опять (слово, чтобы искать было проще)
 
-    // Нормализуем city
+    // Нормализуем города и теги
     const normalizedPosts = posts.map(post => ({
         ...post,
-        city: typeof post.city === 'object' ? post.city?.city || '' : post.city || ''
+        city: typeof post.city === 'object' ? post.city?.city || '' : post.city || '',
+        tags: Array.isArray(post.tags) ? post.tags.map(tag => tag.name || tag) : []
     }));
 
 
 
-
-    
-    if (posts.length === 0) {
+    if (normalizedPosts.length === 0) {
         feedGrid.innerHTML = '<div class="no-posts"><i class="bi bi-search"></i><h3>Ничего не найдено</h3><p>Попробуйте изменить параметры</p></div>';
     } else {
-        //window.feedPosts = posts;
-        window.feedPosts = normalizedPosts; //тимлид
+        window.feedPosts = normalizedPosts;
         renderFeed();
     }
+    // if (posts.length === 0) {
+    //     feedGrid.innerHTML = '<div class="no-posts"><i class="bi bi-search"></i><h3>Ничего не найдено</h3><p>Попробуйте изменить параметры</p></div>';
+    // } else {
+    //     //window.feedPosts = posts;
+    //     window.feedPosts = normalizedPosts; //тимлид
+    //     renderFeed();
+    // }
 }
+
 function escapeHtml(str) { //Это я(даша, которая тимлид) эксперименты ставлю, если забуду удалить - извините
     // Если str не строка и не число, возвращаем пустую строку
     if (str === undefined || str === null) return '';
@@ -66,12 +72,22 @@ async function loadCities() {
 }
 
 // Загрузка тегов
-async function loadTags() {
+// async function loadTags() {
+//     const tags = await apiService.getTags();
+//     availableTags = tags.map(tag => tag.name || tag);
+//     window.tagsList = tags;
+// }
+
+async function loadTags() { //тимлид
     const tags = await apiService.getTags();
     window.tagsList = tags;
+
+    // Извлекаем имена тегов из ответа API
+    availableTags = tags.map(tag => tag.name || tag);
+
+    // Обновляем дропдаун после загрузки
+    renderTagsDropdown();
 }
-
-
 
 
 // Функция сохранения постов
@@ -85,7 +101,8 @@ let filters = {
     tags: []
 };
 
-const availableTags = ['музей', 'театр', 'курорт', 'вулкан', 'водопад', 'гейзер', 'море'];
+//const availableTags = ['музей', 'театр', 'курорт', 'вулкан', 'водопад', 'гейзер', 'море']; //тимлид закомментил
+let availableTags = [];
 
 function getUniqueCities() {
     const cities = window.feedPosts.map(post => post.city);
@@ -97,16 +114,16 @@ function renderCityDropdown() {
     const dropdownContent = document.getElementById('cityDropdownContent');
     const selectedDisplay = document.getElementById('selectedCityDisplay');
     if (!dropdownContent || !selectedDisplay) return;
-    
+
     const cities = getUniqueCities();
-    
+
     let html = `
         <div class="city-item ${!filters.city ? 'selected' : ''}" onclick="selectCity('')">
             <i class="bi bi-globe"></i>
             <span>Все города</span>
         </div>
     `;
-    
+
     cities.sort().forEach(city => {
         const selectedClass = filters.city === city ? 'selected' : '';
         html += `
@@ -116,13 +133,13 @@ function renderCityDropdown() {
             </div>
         `;
     });
-    
+
     dropdownContent.innerHTML = html;
     selectedDisplay.textContent = filters.city || 'Все города';
 }
 
 // Функция выбора города
-window.selectCity = function(city) {
+window.selectCity = function (city) {
     filters.city = city;
     renderCityDropdown();
     renderFeed();
@@ -134,7 +151,7 @@ window.selectCity = function(city) {
 function renderTagsDropdown() {
     const dropdownContent = document.getElementById('tagsDropdownContent');
     if (!dropdownContent) return;
-    
+
     let html = '';
     availableTags.forEach(tag => {
         const checked = filters.tags.includes(tag) ? 'checked' : '';
@@ -153,7 +170,7 @@ function renderTagsDropdown() {
 function renderSelectedTags() {
     const tagsContainer = document.getElementById('selectedTagsContainer');
     if (!tagsContainer) return;
-    
+
     tagsContainer.innerHTML = '';
 
     if (filters.tags.length > 0) {
@@ -173,7 +190,7 @@ function renderSelectedTags() {
 }
 
 // Удаление тега по клику на крестик
-window.removeSelectedTag = function(tag) {
+window.removeSelectedTag = function (tag) {
     filters.tags = filters.tags.filter(t => t !== tag);
     renderFeed();
     renderTagsDropdown();
@@ -181,7 +198,7 @@ window.removeSelectedTag = function(tag) {
 };
 
 // Функция для переключения тега из чекбокса
-window.toggleTagFromCheckbox = function(tag) {
+window.toggleTagFromCheckbox = function (tag) {
     if (filters.tags.includes(tag)) {
         filters.tags = filters.tags.filter(t => t !== tag);
     } else {
@@ -203,25 +220,25 @@ function getTagColorIndex(tag) {
     };
     return colorMap[tag] || 'default';
 }
-let viewMode = 'grid'; 
+let viewMode = 'grid';
 
 // Функция переключения вида
 function initViewToggle() {
     const gridBtn = document.getElementById('viewGrid');
     const listBtn = document.getElementById('viewList');
     const feedGrid = document.getElementById('feedGrid');
-    
+
     if (!gridBtn || !listBtn || !feedGrid) return;
-    
+
     gridBtn.addEventListener('click', () => {
         viewMode = 'grid';
         feedGrid.classList.remove('list-view');
         feedGrid.classList.add('grid-view');
         gridBtn.classList.add('active');
         listBtn.classList.remove('active');
-        renderFeed(); 
+        renderFeed();
     });
-    
+
     listBtn.addEventListener('click', () => {
         viewMode = 'list';
         feedGrid.classList.remove('grid-view');
@@ -242,7 +259,7 @@ function renderFeed() {
     const filteredPosts = window.feedPosts.filter(post => {
         const matchesSearch = post.name.toLowerCase().includes(filters.search.toLowerCase());
         const matchesCity = !filters.city || post.city === filters.city;
-        const matchesTags = filters.tags.length === 0 || 
+        const matchesTags = filters.tags.length === 0 ||
             filters.tags.some(tag => post.tags.includes(tag));
         return matchesSearch && matchesCity && matchesTags;
     });
@@ -254,7 +271,7 @@ function renderFeed() {
 
     // Определяем, является ли пользователь администратором
     const isAdminUser = window.isAdmin && window.isAdmin();
-
+    
     feedGrid.innerHTML = filteredPosts.map(post => `
         <div class="post-card" data-post-id="${post.id}">
             <img src="${post.cover_photo}" alt="${post.name}" class="post-cover_photo" onerror="this.src='https://via.placeholder.com/400x200?text=Фото+не+доступно'">
@@ -287,7 +304,7 @@ function renderFeed() {
             </div>
         </div>
     `).join('');
-    
+
     initCardClicks();
 }
 
@@ -295,19 +312,19 @@ function renderFeed() {
 function togglePostMenu(postId) {
     const menu = document.getElementById(`post-menu-${postId}`);
     if (!menu) return;
-    
+
     // Закрываем другие открытые меню
     document.querySelectorAll('.post-menu.show').forEach(openMenu => {
         if (openMenu.id !== `post-menu-${postId}`) {
             openMenu.classList.remove('show');
         }
     });
-    
+
     menu.classList.toggle('show');
 }
 
 // Закрытие меню при клике вне
-document.addEventListener('click', function(event) {
+document.addEventListener('click', function (event) {
     if (!event.target.closest('.post-actions-dropdown')) {
         document.querySelectorAll('.post-menu.show').forEach(menu => {
             menu.classList.remove('show');
@@ -319,7 +336,7 @@ document.addEventListener('click', function(event) {
 function editPost(postId) {
     const post = window.feedPosts.find(p => p.id === postId);
     if (!post) return;
-    
+
     // Создаем модальное окно редактирования
     let modal = document.getElementById('editPostModal');
     if (!modal) {
@@ -371,54 +388,54 @@ function editPost(postId) {
         `;
         document.body.appendChild(modal);
     }
-    
+
     // Заполняем форму текущими данными
     document.getElementById('editTitle').value = post.name;
     document.getElementById('editCity').value = post.city;
     document.getElementById('editAddress').value = post.address || '';
     document.getElementById('editDescription').value = post.description;
     document.getElementById('editImageURL').value = post.cover_photo;
-    
+
     // Отмечаем теги
     const checkboxes = document.querySelectorAll('#editTags input');
     checkboxes.forEach(cb => {
         cb.checked = post.tags.includes(cb.value);
     });
-    
+
     modal.style.display = 'flex';
-    
+
     // Сохраняем ID редактируемого поста
     window.editingPostId = postId;
-    
+
     // Обработчик отправки формы
     const form = document.getElementById('editPostForm');
     const newForm = form.cloneNode(true);
     form.parentNode.replaceChild(newForm, form);
-    
-    newForm.addEventListener('submit', function(e) {
+
+    newForm.addEventListener('submit', function (e) {
         e.preventDefault();
-        
+
         const name = document.getElementById('editTitle').value.trim();
         const city = document.getElementById('editCity').value.trim();
         const address = document.getElementById('editAddress').value.trim();
         const description = document.getElementById('editDescription').value.trim();
         let cover_photo = document.getElementById('editImageURL').value.trim();
-        
+
         if (!name || !city) {
             alert('Пожалуйста, заполните обязательные поля (название и город)');
             return;
         }
-        
+
         if (!cover_photo) {
             cover_photo = 'https://via.placeholder.com/400x200?text=Новое+место';
         }
-        
+
         const selectedTags = Array.from(document.querySelectorAll('#editTags input:checked')).map(cb => cb.value);
         if (selectedTags.length === 0) {
             alert('Выберите хотя бы один тег');
             return;
         }
-        
+
         // Обновляем пост
         const postIndex = window.feedPosts.findIndex(p => p.id === window.editingPostId);
         if (postIndex !== -1) {
@@ -431,10 +448,10 @@ function editPost(postId) {
                 cover_photo: cover_photo,
                 tags: selectedTags
             };
-            
+
             // Сохраняем в localStorage
             localStorage.setItem('feedPosts', JSON.stringify(window.feedPosts));
-            
+
             alert('Место успешно обновлено!');
             closeEditPostModal();
             renderFeed();
@@ -453,23 +470,23 @@ function deletePost(postId) {
     if (!confirm('Вы уверены, что хотите удалить это место? Это действие нельзя отменить.')) {
         return;
     }
-    
+
     const postIndex = window.feedPosts.findIndex(p => p.id === postId);
     if (postIndex !== -1) {
         const postTitle = window.feedPosts[postIndex].name;
         window.feedPosts.splice(postIndex, 1);
-        
+
         // Сохраняем в localStorage
         localStorage.setItem('feedPosts', JSON.stringify(window.feedPosts));
-        
+
         // Также удаляем пост из всех коллекций
         let postCollections = JSON.parse(localStorage.getItem('postCollections')) || [];
         postCollections = postCollections.filter(pc => pc.postId !== postId);
         localStorage.setItem('postCollections', JSON.stringify(postCollections));
-        
+
         alert(`Место "${postTitle}" удалено`);
         renderFeed();
-        
+
         // Если модальное окно открыто с этим постом, закрываем его
         const modal = document.getElementById('postModal');
         if (modal && modal.style.display === 'block') {
@@ -482,7 +499,7 @@ function deletePost(postId) {
 function initCardClicks() {
     const cards = document.querySelectorAll('.post-card');
     cards.forEach(card => {
-        card.addEventListener('click', function() {
+        card.addEventListener('click', function () {
             const postId = this.dataset.postId;
             if (postId) {
                 openPostModal(parseInt(postId));
@@ -495,26 +512,26 @@ function initCardClicks() {
 function openPostModal(postId) {
     const post = window.feedPosts.find(p => p.id === postId);
     if (!post) return;
-    
+
     currentPostId = postId;
-    
+
     const modal = document.getElementById('postModal');
     const modalTitle = document.getElementById('modalTitle');
     const modalContent = document.getElementById('modalContent');
-    
+
     if (modalTitle) {
         modalTitle.textContent = post.name;
     }
-    
+
     let overlay = document.querySelector('.modal-overlay');
     if (!overlay) {
         overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
         document.body.appendChild(overlay);
     }
-    
+
     const isAdminUser = window.isAdmin && window.isAdmin();
-    
+
     modalContent.innerHTML = `
         <div style="position: relative;">
             ${isAdminUser ? `
@@ -545,9 +562,9 @@ function openPostModal(postId) {
         <h4 style="margin-bottom:12px;">Добавить в коллекцию:</h4>
         <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px;" id="collectionButtons"></div>
     `;
-    
+
     renderCollectionButtons(postId);
-    
+
     modal.style.display = 'block';
     overlay.style.display = 'block';
 }
@@ -556,13 +573,13 @@ function openPostModal(postId) {
 function toggleModalPostMenu(postId) {
     const menu = document.getElementById(`modal-post-menu-${postId}`);
     if (!menu) return;
-    
+
     document.querySelectorAll('.post-menu.show').forEach(openMenu => {
         if (openMenu.id !== `modal-post-menu-${postId}`) {
             openMenu.classList.remove('show');
         }
     });
-    
+
     menu.classList.toggle('show');
 }
 
@@ -575,7 +592,7 @@ function closePostModal() {
 }
 
 // Клик по оверлею для закрытия
-document.addEventListener('click', function(e) {
+document.addEventListener('click', function (e) {
     if (e.target.classList.contains('modal-overlay')) {
         closePostModal();
     }
@@ -587,29 +604,29 @@ function renderCollectionButtons(postId) {
         console.error('collectionButtons not found!');
         return;
     }
-    
+
     const postInCollections = postCollections.filter(pc => pc.postId === postId).map(pc => pc.collectionId);
-    
+
     let html = '';
     userCollections.forEach(collection => {
         const isActive = postInCollections.includes(collection.id);
         html += `<button class="collection-btn ${isActive ? 'active' : ''}" onclick="togglePostInCollection(${postId}, '${collection.id}')">${collection.name}</button>`;
     });
-    
+
     container.innerHTML = html;
 }
 
 // Переключение поста в коллекции
-window.togglePostInCollection = function(postId, collectionId) { 
-    
+window.togglePostInCollection = function (postId, collectionId) {
+
     const index = postCollections.findIndex(pc => pc.postId === postId && pc.collectionId === collectionId);
-    
+
     if (index === -1) {
         postCollections.push({ postId, collectionId });
     } else {
         postCollections.splice(index, 1);
     }
-    
+
     localStorage.setItem('postCollections', JSON.stringify(postCollections));
 
     if (currentPostId === postId) {
@@ -667,21 +684,21 @@ function initCityDropdown() {
     const cityToggle = document.getElementById('cityToggleBtn');
     const cityDropdown = document.getElementById('cityDropdown');
     const closeBtn = document.getElementById('closeCityDropdown');
-    
+
     if (!cityToggle || !cityDropdown) return;
-    
+
     cityToggle.addEventListener('click', (e) => {
         e.stopPropagation();
         cityDropdown.classList.toggle('show');
-        renderCityDropdown(); 
+        renderCityDropdown();
     });
-    
+
     if (closeBtn) {
         closeBtn.addEventListener('click', () => {
             cityDropdown.classList.remove('show');
         });
     }
-    
+
     document.addEventListener('click', (e) => {
         if (!cityToggle.contains(e.target) && !cityDropdown.contains(e.target)) {
             cityDropdown.classList.remove('show');
@@ -694,21 +711,21 @@ function initTagsDropdown() {
     const tagsToggle = document.getElementById('tagsToggleBtn');
     const tagsDropdown = document.getElementById('tagsDropdown');
     const closeBtn = document.getElementById('closeTagsDropdown');
-    
+
     if (!tagsToggle || !tagsDropdown) return;
-    
+
     tagsToggle.addEventListener('click', (e) => {
         e.stopPropagation();
         tagsDropdown.classList.toggle('show');
-        renderTagsDropdown(); 
+        renderTagsDropdown();
     });
-    
+
     if (closeBtn) {
         closeBtn.addEventListener('click', () => {
             tagsDropdown.classList.remove('show');
         });
     }
-    
+
     document.addEventListener('click', (e) => {
         if (!tagsToggle.contains(e.target) && !tagsDropdown.contains(e.target)) {
             tagsDropdown.classList.remove('show');
@@ -739,19 +756,19 @@ function initLogout() {
     }
 }
 
-window.removeFromCollection = function(postId, collectionId) {
+window.removeFromCollection = function (postId, collectionId) {
     let postCollections = JSON.parse(localStorage.getItem('postCollections')) || [];
-    postCollections = postCollections.filter(pc => 
+    postCollections = postCollections.filter(pc =>
         !(pc.postId === postId && pc.collectionId === collectionId)
     );
     localStorage.setItem('postCollections', JSON.stringify(postCollections));
-    
+
     if (window.location.pathname.includes('collection_detail.html')) {
         if (typeof loadCollectionPosts === 'function') {
             loadCollectionPosts();
         }
     }
-    
+
     if (currentPostId === postId) {
         renderCollectionButtons(postId);
     }
@@ -768,7 +785,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initSearch();
     initViewToggle();
     renderSelectedTags();
-    
+
     if (window.updateUIForUser) {
         window.updateUIForUser();
     }
