@@ -1,4 +1,5 @@
 import apiService from './apiService.js';
+import { api } from './index.js';
 
 if (!localStorage.getItem('feedPosts')) {
     const defaultPosts = [
@@ -70,9 +71,6 @@ window.feedPosts = JSON.parse(localStorage.getItem('feedPosts'));
 
 // Хранилище пользователей
 let users = JSON.parse(localStorage.getItem('users')) || [];
-
-// Хранилище одноразовых кодов (временное)
-let otpCodes = {};
 
 // Создаем первого админа при отсутствии пользователей
 if (users.length === 0) {
@@ -195,7 +193,7 @@ function switchToLogin() {
 }
 
 // Отправка кода для входа
-function sendLoginCode() {
+async function sendLoginCode() {
     const email = document.getElementById('loginEmail').value.trim();
     
     if (!email) {
@@ -203,29 +201,32 @@ function sendLoginCode() {
         return;
     }
     
-    // Проверяем, существует ли пользователь
-    const user = users.find(u => u.email === email);
-    if (!user) {
-        alert('Пользователь с таким email не найден. Пожалуйста, зарегистрируйтесь.');
-        return;
-    }
-    
-    const code = generateOTP();
-    otpCodes[email] = {
-        code: code,
-        expires: Date.now() + 5 * 60 * 1000 // 5 минут
-    };
-    
-    if (sendOTP(email, code)) {
-        const codeInput = document.getElementById('loginCode');
-        const sendCodeBtn = document.getElementById('sendCodeBtn');
-        const submitBtn = document.getElementById('loginSubmitBtn');
+    try {
+        const response = await fetch('http://localhost:8000/api/v1/auth/code', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email: email })
+        });
         
-        if (codeInput) codeInput.style.display = 'block';
-        if (sendCodeBtn) sendCodeBtn.style.display = 'none';
-        if (submitBtn) submitBtn.style.display = 'block';
-        
-        alert(`Код отправлен на ${email}`);
+        if (response.ok) {
+            const codeInput = document.getElementById('loginCode');
+            const sendCodeBtn = document.getElementById('sendCodeBtn');
+            const submitBtn = document.getElementById('loginSubmitBtn');
+            
+            if (codeInput) codeInput.style.display = 'block';
+            if (sendCodeBtn) sendCodeBtn.style.display = 'none';
+            if (submitBtn) submitBtn.style.display = 'block';
+            
+            alert(`Код отправлен на ${email}\n`);
+        } else {
+            const error = await response.text();
+            alert('Ошибка: ' + error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Ошибка соединения с сервером.');
     }
 }
 
@@ -254,12 +255,11 @@ async function handleLoginWithCode(event) {
             callback();
         }
         
-        alert(`Добро пожаловать, ${currentUser.name}!`);
+        alert("Добро пожаловать!");
         
         if (!window.location.pathname.includes('index.html')) {
             window.location.href = 'index.html';
         } else {
-            // Перезагрузка ленты
             if (typeof loadFeedFromServer === 'function') {
                 loadFeedFromServer();
             }
@@ -267,57 +267,10 @@ async function handleLoginWithCode(event) {
     } else {
         alert(result.error);
     }
-    
-    if (Date.now() > storedOTP.expires) {
-        alert('Код истек. Запросите новый код.');
-        delete otpCodes[email];
-        // Сбрасываем форму
-        const codeInput = document.getElementById('loginCode');
-        const sendCodeBtn = document.getElementById('sendCodeBtn');
-        const submitBtn = document.getElementById('loginSubmitBtn');
-        if (codeInput) {
-            codeInput.style.display = 'none';
-            codeInput.value = '';
-        }
-        if (sendCodeBtn) sendCodeBtn.style.display = 'block';
-        if (submitBtn) submitBtn.style.display = 'none';
-        return;
-    }
-    
-    if (storedOTP.code !== code) {
-        alert('Неверный код подтверждения');
-        return;
-    }
-    
-    const user = users.find(u => u.email === email);
-    
-    if (user) {
-        currentUser = { ...user };
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        delete otpCodes[email];
-        
-        updateUIForUser();
-        closeLoginModal();
-        
-        // Выполняем отложенное действие, если было
-        if (window.pendingAuthCallback) {
-            const callback = window.pendingAuthCallback;
-            window.pendingAuthCallback = null;
-            callback();
-        }
-        
-        alert(`Добро пожаловать, ${user.name}!`);
-        
-        // Если мы не на главной странице, перенаправляем на ленту
-        if (!window.location.pathname.includes('index.html') && window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
-            window.location.href = 'index.html';
-        }
-    } else {
-        alert('Ошибка: пользователь не найден');
-    }
 }
 
 // Регистрация (без пароля)
+/*
 function handleRegister(event) {
     event.preventDefault();
     
@@ -348,6 +301,7 @@ function handleRegister(event) {
     closeRegisterModal();
     showLoginModal();
 }
+*/
 
 // Выход из аккаунта
 function logout() {
@@ -358,7 +312,7 @@ function logout() {
     window.location.href = 'index.html';
 }
 
-// ============ УПРАВЛЕНИЕ АДМИНИСТРАТОРАМИ ============
+// Управление администраторами
 
 function openAdminManageModal() {
     if (!isAdmin()) {
@@ -433,7 +387,7 @@ function addAdmin() {
     
     updateAdminList();
     document.getElementById('adminEmail').value = '';
-    alert(`Пользователь ${user.name} теперь администратор`);
+    alert(`Пользователь ${user.email} теперь администратор`);
 }
 
 function removeAdmin() {
@@ -480,7 +434,7 @@ function removeAdmin() {
     
     updateAdminList();
     document.getElementById('adminEmail').value = '';
-    alert(`Пользователь ${user.name} больше не администратор`);
+    alert(`Пользователь ${user.email} больше не администратор`);
 }
 
 // ============ ЗАЩИТА МАРШРУТОВ ============
@@ -644,7 +598,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (loginForm) loginForm.addEventListener('submit', handleLoginWithCode);
     
     const registerForm = document.getElementById('registerForm');
-    if (registerForm) registerForm.addEventListener('submit', handleRegister);
+    //if (registerForm) registerForm.addEventListener('submit', handleRegister);
     
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {

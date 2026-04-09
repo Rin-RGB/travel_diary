@@ -3,6 +3,7 @@ import apiService from './apiService.js';
 // Синхронизация коллекций между страницами
 let userCollections = JSON.parse(localStorage.getItem('collections')) || [];
 let postCollections = JSON.parse(localStorage.getItem('postCollections')) || [];
+let currentPostId = null;
 
 if (userCollections.length === 0) {
     userCollections = [
@@ -26,13 +27,16 @@ async function loadFeedFromServer() {
 
     const posts = await apiService.loadPlaces(params); //тимлид опять (слово, чтобы искать было проще)
 
-    // Нормализуем города и теги
     const normalizedPosts = posts.map(post => ({
-        ...post,
+        id: post.id,
+        title: post.name,
+        name: post.name,
         city: typeof post.city === 'object' ? post.city?.city || '' : post.city || '',
+        description: post.description,
+        image: post.cover_photo, 
+        cover_photo: post.cover_photo,
         tags: Array.isArray(post.tags) ? post.tags.map(tag => tag.name || tag) : []
     }));
-
 
 
     if (normalizedPosts.length === 0) {
@@ -274,7 +278,7 @@ function renderFeed() {
     
     feedGrid.innerHTML = filteredPosts.map(post => `
         <div class="post-card" data-post-id="${post.id}">
-            <img src="${post.cover_photo}" alt="${post.name}" class="post-cover_photo" onerror="this.src='https://via.placeholder.com/400x200?text=Фото+не+доступно'">
+            <img src="${post.cover_photo || post.image}" alt="${post.name || post.title}" class="post-image" onerror="this.onerror=null; this.src='https://via.placeholder.com/400x200?text=Фото+не+доступно'">
             <div class="post-content">
                 <div class="post-header">
                     <h3 class="post-name">${escapeHtml(post.name)}</h3>
@@ -499,76 +503,69 @@ function deletePost(postId) {
 function initCardClicks() {
     const cards = document.querySelectorAll('.post-card');
     cards.forEach(card => {
-        card.addEventListener('click', function () {
+        card.addEventListener('click', function(e) {
+            if (e.target.closest('.post-actions-dropdown')) return;
             const postId = this.dataset.postId;
             if (postId) {
-                openPostModal(parseInt(postId));
+                openPostModal(postId);
             }
         });
     });
 }
 
-// Открытие модального окна
 function openPostModal(postId) {
+    
     const post = window.feedPosts.find(p => p.id === postId);
-    if (!post) return;
-
-    currentPostId = postId;
-
+    if (!post) {
+        return;
+    }
+    
     const modal = document.getElementById('postModal');
     const modalTitle = document.getElementById('modalTitle');
     const modalContent = document.getElementById('modalContent');
-
-    if (modalTitle) {
-        modalTitle.textContent = post.name;
+    
+    if (!modal || !modalContent) {
+        return;
     }
-
+    
+    currentPostId = postId;
+    
+    if (modalTitle) {
+        modalTitle.textContent = post.name || post.title;
+    }
     let overlay = document.querySelector('.modal-overlay');
     if (!overlay) {
         overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
+        overlay.onclick = closePostModal;
         document.body.appendChild(overlay);
     }
-
-    const isAdminUser = window.isAdmin && window.isAdmin();
-
+    
+    const isAdminUser = window.isAdmin ? window.isAdmin() : false;
+    
     modalContent.innerHTML = `
-        <div style="position: relative;">
-            ${isAdminUser ? `
-                <div style="position: absolute; top: 0; right: 0;">
-                    <div class="post-actions-dropdown">
-                        <button class="post-menu-btn" onclick="event.stopPropagation(); toggleModalPostMenu(${post.id})">
-                            <i class="bi bi-three-dots-vertical"></i>
-                        </button>
-                        <div class="post-menu" id="modal-post-menu-${post.id}">
-                            <button onclick="event.stopPropagation(); closePostModal(); editPost(${post.id})">
-                                <i class="bi bi-pencil"></i> Редактировать
-                            </button>
-                            <button onclick="event.stopPropagation(); closePostModal(); deletePost(${post.id})">
-                                <i class="bi bi-trash"></i> Удалить
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            ` : ''}
-            <img src="${post.cover_photo}" alt="${post.name}" style="width:100%; max-height:300px; object-fit:cover; border-radius:16px; margin-bottom:16px;">
-        </div>
-        <div class="post-city" style="color:var(--accent-color); margin-bottom:8px; font-weight:500;">${post.city}</div>
-        <p style="margin-bottom:16px;">${post.description}</p>
+        <img src="${post.cover_photo || post.image}" 
+             alt="${post.name || post.title}" 
+             style="width:100%; max-height:300px; object-fit:cover; border-radius:16px; margin-bottom:16px;" 
+             onerror="this.onerror=null; this.src='https://via.placeholder.com/400x200'">
+        <div class="post-city" style="color:var(--accent-color); margin-bottom:8px; font-weight:500;">${post.city || ''}</div>
         <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
-            ${post.tags.map(tag => `<span class="post-tag" data-tag="${tag}">#${tag}</span>`).join('')}
+            ${(post.tags || []).map(tag => `<span class="post-tag" data-tag="${tag}">#${tag}</span>`).join('')}
         </div>
-        
         <h4 style="margin-bottom:12px;">Добавить в коллекцию:</h4>
         <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px;" id="collectionButtons"></div>
+        <button class="submit-btn" onclick="closePostModal()" style="width:100%;">Закрыть</button>
     `;
-
-    renderCollectionButtons(postId);
 
     modal.style.display = 'block';
     overlay.style.display = 'block';
+    if (typeof renderCollectionButtons === 'function') {
+        renderCollectionButtons(postId);
+    }
+    
+    modal.style.display = 'block';
+    overlay.style.display = 'block';
 }
-
 // Переключение меню в модальном окне
 function toggleModalPostMenu(postId) {
     const menu = document.getElementById(`modal-post-menu-${postId}`);
@@ -601,7 +598,6 @@ document.addEventListener('click', function (e) {
 function renderCollectionButtons(postId) {
     const container = document.getElementById('collectionButtons');
     if (!container) {
-        console.error('collectionButtons not found!');
         return;
     }
 
@@ -617,8 +613,10 @@ function renderCollectionButtons(postId) {
 }
 
 // Переключение поста в коллекции
-window.togglePostInCollection = function (postId, collectionId) {
-
+window.togglePostInCollection = function(postId, collectionId) {
+    console.log('togglePostInCollection called', postId, collectionId);
+    
+    let postCollections = JSON.parse(localStorage.getItem('postCollections')) || [];
     const index = postCollections.findIndex(pc => pc.postId === postId && pc.collectionId === collectionId);
 
     if (index === -1) {
@@ -628,7 +626,6 @@ window.togglePostInCollection = function (postId, collectionId) {
     }
 
     localStorage.setItem('postCollections', JSON.stringify(postCollections));
-
     if (currentPostId === postId) {
         renderCollectionButtons(postId);
     }
@@ -785,8 +782,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     initSearch();
     initViewToggle();
     renderSelectedTags();
-
+    
     if (window.updateUIForUser) {
         window.updateUIForUser();
     }
 });
+
+window.openPostModal = openPostModal;
+window.closePostModal = closePostModal;
+window.renderCollectionButtons = renderCollectionButtons;
+window.togglePostInCollection = togglePostInCollection;
+window.editPost = editPost;
+window.deletePost = deletePost;
+window.togglePostMenu = togglePostMenu;
+window.closeEditPostModal = closeEditPostModal;
+window.renderCollectionButtons = renderCollectionButtons;
+window.togglePostInCollection = togglePostInCollection;

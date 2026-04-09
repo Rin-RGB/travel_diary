@@ -1,4 +1,31 @@
-import apiService from './apiService.js';
+let userCollections = [];
+let postCollections = [];
+
+window.isAuthenticated = function() {
+    return localStorage.getItem('currentUser') !== null;
+};
+
+window.isAdmin = function() {
+    const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    return user.role === 'admin';
+};
+
+window.updateUIForUser = function() {
+};
+
+function loadCollectionsData() {
+    userCollections = JSON.parse(localStorage.getItem('collections')) || [];
+    postCollections = JSON.parse(localStorage.getItem('postCollections')) || [];
+    
+    // Если нет коллекций - создаем стандартные
+    if (userCollections.length === 0) {
+        userCollections = [
+            { id: 'want-to-visit', name: 'Хочу посетить', editable: false },
+            { id: 'visited', name: 'Посещено', editable: false }
+        ];
+        localStorage.setItem('collections', JSON.stringify(userCollections));
+    }
+}
 
 // Функция для экранирования HTML
 function escapeHtml(str) {
@@ -11,38 +38,25 @@ function escapeHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
-// Загружаем коллекции
-window.userCollections = JSON.parse(localStorage.getItem('collections')) || [
-    { id: 'want-to-visit', name: 'Хочу посетить', editable: false },
-    { id: 'visited', name: 'Посещено', editable: false }
-];
-
-window.postCollections = JSON.parse(localStorage.getItem('postCollections')) || [];
-
-// Сохраняем начальные коллекции, если их нет
-if (JSON.parse(localStorage.getItem('collections')) === null) {
-    localStorage.setItem('collections', JSON.stringify(window.userCollections));
-}
-
-// Функция получения постов (ждет загрузки window.feedPosts)
-function getFeedPosts() {
-    return window.feedPosts || [];
-}
-
 // Функция рендеринга списка коллекций
 function renderCollectionsList() {
     const container = document.getElementById('collectionsList');
     if (!container) {
-        console.error('Контейнер collectionsList не найден!');
         return;
     }
 
-    const posts = getFeedPosts();
-    console.log('Постов для отображения:', posts.length);
+    loadCollectionsData();
+    
+    const posts = window.feedPosts || [];
+
+    if (userCollections.length === 0) {
+        container.innerHTML = '<div class="no-posts"><h3>Нет коллекций</h3><p>Создайте первую коллекцию</p></div>';
+        return;
+    }
 
     let html = '';
-    window.userCollections.forEach(collection => {
-        const postIds = (window.postCollections || [])
+    userCollections.forEach(collection => {
+        const postIds = postCollections
             .filter(pc => pc.collectionId === collection.id)
             .map(pc => pc.postId);
         const collectionPosts = posts.filter(post => postIds.includes(post.id));
@@ -70,37 +84,37 @@ function renderCollectionsList() {
                         </div>
                     ` : ''}
                 </div>
+                <div class="collection-preview">
+                    ${renderCollectionPreview(collectionPosts)}
+                </div>
             </div>
         `;
     });
-    container.innerHTML = html;
     
-    // Добавляем обработчики кликов на карточки коллекций
-    document.querySelectorAll('.collection-card').forEach(card => {
-        card.addEventListener('click', function(e) {
-            // Проверяем, что клик не по кнопкам меню
-            if (!e.target.closest('.collection-actions-dropdown')) {
-                const collectionId = this.dataset.collectionId;
-                if (collectionId) {
-                    openCollectionDetail(collectionId);
-                }
-            }
-        });
-    });
+    container.innerHTML = html;
 }
 
-// Функция открытия детальной страницы коллекции
-window.openCollectionDetail = function(collectionId) {
-    console.log('Открываем коллекцию:', collectionId);
-    window.location.href = `collection_detail.html?id=${collectionId}`;
-};
+// Превью коллекции (первые 3 картинки)
+function renderCollectionPreview(posts) {
+    if (posts.length === 0) {
+        return '<div class="collection-empty-text">Нет мест в коллекции</div>';
+    }
+    
+    const previewPosts = posts.slice(0, 3);
+    return `
+        <div class="collection-preview-images">
+            ${previewPosts.map(post => `
+                <img src="${post.cover_photo || post.image}" class="preview-image" onerror="this.src='https://via.placeholder.com/80x80'">
+            `).join('')}
+        </div>
+    `;
+}
 
-// Функция для переключения видимости меню 
+// Переключение меню коллекции
 window.toggleCollectionMenu = function(collectionId) {
     const menu = document.getElementById(`menu-${collectionId}`);
     if (!menu) return;
     
-    // Закрываем другие открытые меню
     document.querySelectorAll('.collection-menu.show').forEach(openMenu => {
         if (openMenu.id !== `menu-${collectionId}`) {
             openMenu.classList.remove('show');
@@ -110,63 +124,136 @@ window.toggleCollectionMenu = function(collectionId) {
     menu.classList.toggle('show');
 };
 
-// Закрыть меню при клике вне его
-document.addEventListener('click', function(event) {
-    if (!event.target.closest('.collection-actions-dropdown')) {
-        document.querySelectorAll('.collection-menu.show').forEach(menu => {
-            menu.classList.remove('show');
-        });
-    }
-});
-
-// Функция для редактирования названия коллекции
+// Редактирование названия коллекции
 window.editCollectionName = function(collectionId) {
-    const collection = window.userCollections.find(c => c.id === collectionId);
+    const collection = userCollections.find(c => c.id === collectionId);
     if (!collection || !collection.editable) return;
 
     const newName = prompt('Введите новое название для коллекции:', collection.name);
     if (newName && newName.trim() !== '') {
         collection.name = newName.trim();
-        localStorage.setItem('collections', JSON.stringify(window.userCollections));
-        renderCollectionsList(); 
-    }
-};
-
-// Функция удаления коллекции
-window.deleteCollection = function(collectionId) {
-    const collection = window.userCollections.find(c => c.id === collectionId);
-    if (!collection || !collection.editable) return;
-
-    if (confirm(`Вы уверены, что хотите удалить коллекцию "${collection.name}"? Посты из неё не удалятся, но связь с ними потеряется.`)) {
-        window.userCollections = window.userCollections.filter(c => c.id !== collectionId);
-        window.postCollections = window.postCollections.filter(pc => pc.collectionId !== collectionId);
-        localStorage.setItem('collections', JSON.stringify(window.userCollections));
-        localStorage.setItem('postCollections', JSON.stringify(window.postCollections));
+        localStorage.setItem('collections', JSON.stringify(userCollections));
         renderCollectionsList();
     }
 };
 
-// Функция добавления коллекции
+// Удаление коллекции
+window.deleteCollection = function(collectionId) {
+    const collection = userCollections.find(c => c.id === collectionId);
+    if (!collection || !collection.editable) return;
+
+    if (confirm(`Вы уверены, что хотите удалить коллекцию "${collection.name}"?`)) {
+        userCollections = userCollections.filter(c => c.id !== collectionId);
+        postCollections = postCollections.filter(pc => pc.collectionId !== collectionId);
+        localStorage.setItem('collections', JSON.stringify(userCollections));
+        localStorage.setItem('postCollections', JSON.stringify(postCollections));
+        renderCollectionsList();
+    }
+};
+
+// Добавление коллекции
 window.addCollection = function() {
-    console.log('addCollection вызвана');
     const name = prompt('Введите название новой коллекции:');
-    console.log('Введенное имя:', name);
     if (name && name.trim()) {
         const newCollection = {
             id: 'custom-' + Date.now(),
             name: name.trim(),
             editable: true
         };
-        window.userCollections.push(newCollection);
-        localStorage.setItem('collections', JSON.stringify(window.userCollections));
-        console.log('Коллекция добавлена:', newCollection);
+        userCollections.push(newCollection);
+        localStorage.setItem('collections', JSON.stringify(userCollections));
         renderCollectionsList();
-    } else {
-        console.log('Добавление отменено');
     }
 };
 
-// Добавляем стили для превью коллекций
+// Открытие детальной страницы коллекции
+window.openCollectionDetail = function(collectionId) {
+    window.location.href = `collection_detail.html?id=${collectionId}`;
+};
+
+// Клик по карточке коллекции
+function initCollectionClicks() {
+    const cards = document.querySelectorAll('.collection-card');
+    cards.forEach(card => {
+        card.addEventListener('click', function(e) {
+            if (e.target.closest('.collection-actions-dropdown')) return;
+            const collectionId = this.dataset.collectionId;
+            if (collectionId) {
+                window.openCollectionDetail(collectionId);
+            }
+        });
+    });
+}
+
+// Инициализация темы
+function initCollectionsTheme() {
+    const themeToggle = document.getElementById('themeToggle');
+    if (!themeToggle) return;
+    
+    const icon = themeToggle.querySelector('i');
+    const savedTheme = localStorage.getItem('theme');
+    
+    if (savedTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        if (icon) {
+            icon.classList.remove('bi-moon');
+            icon.classList.add('bi-sun');
+        }
+    }
+    
+    themeToggle.addEventListener('click', () => {
+        const html = document.documentElement;
+        if (html.hasAttribute('data-theme')) {
+            html.removeAttribute('data-theme');
+            if (icon) {
+                icon.classList.remove('bi-sun');
+                icon.classList.add('bi-moon');
+            }
+            localStorage.setItem('theme', 'light');
+        } else {
+            html.setAttribute('data-theme', 'dark');
+            if (icon) {
+                icon.classList.remove('bi-moon');
+                icon.classList.add('bi-sun');
+            }
+            localStorage.setItem('theme', 'dark');
+        }
+    });
+}
+
+// Инициализация выпадающего меню
+function initCollectionsDropdown() {
+    const profileBtn = document.getElementById('profileBtn');
+    const dropdown = document.getElementById('dropdownMenu');
+    
+    if (!profileBtn || !dropdown) return;
+    
+    profileBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('show');
+    });
+    
+    document.addEventListener('click', () => {
+        dropdown.classList.remove('show');
+    });
+}
+
+// Инициализация выхода
+function initCollectionsLogout() {
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (confirm('Вы уверены, что хотите выйти?')) {
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                window.location.href = 'index.html';
+            }
+        });
+    }
+}
+
 function addCollectionStyles() {
     if (document.getElementById('collection-preview-styles')) return;
     
@@ -191,45 +278,57 @@ function addCollectionStyles() {
             font-size: 14px;
             padding: 12px 0;
         }
+        .collection-card {
+            cursor: pointer;
+        }
     `;
     document.head.appendChild(styles);
 }
 
-// Инициализация при загрузке страницы
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.collection-actions-dropdown')) {
+        document.querySelectorAll('.collection-menu.show').forEach(menu => {
+            menu.classList.remove('show');
+        });
+    }
+});
+
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM загружен, инициализация collections');
     addCollectionStyles();
-    
-    // Ждем загрузки window.feedPosts
     function checkAndRender() {
         if (window.feedPosts && window.feedPosts.length > 0) {
             renderCollectionsList();
+            setTimeout(initCollectionClicks, 100);
         } else {
-            // Если посты еще не загружены, ждем немного и пробуем снова
             setTimeout(() => {
                 if (window.feedPosts) {
                     renderCollectionsList();
+                    initCollectionClicks();
                 } else {
-                    console.warn('Посты не загружены, создаем пустой массив');
                     window.feedPosts = [];
                     renderCollectionsList();
                 }
-            }, 100);
+            }, 500);
         }
     }
     
     checkAndRender();
-    
     const addBtn = document.getElementById('addCollectionPageBtn');
     if (addBtn) {
-        console.log('Кнопка "Новая коллекция" найдена');
         addBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            console.log('Кнопка нажата');
             window.addCollection();
         });
-    } else {
-        console.error('Кнопка "Новая коллекция" не найдена');
     }
 });
+
+document.addEventListener('DOMContentLoaded', function() {
+    initCollectionsTheme();
+    initCollectionsDropdown();
+    initCollectionsLogout();
+});
+
+window.renderCollectionsList = renderCollectionsList;
+window.userCollections = userCollections;
+window.postCollections = postCollections;

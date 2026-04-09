@@ -1,4 +1,4 @@
-console.log('collection_detail.js загружен');
+
 
 let currentCollectionId = null;
 let currentCollection = null;
@@ -32,8 +32,6 @@ function initCollectionDetail() {
     
     const collections = JSON.parse(localStorage.getItem('collections')) || [];
     currentCollection = collections.find(c => c.id === currentCollectionId);
-    
-    console.log('Найдена коллекция:', currentCollection);
     
     if (!currentCollection) {
         console.error('Коллекция не найдена');
@@ -422,7 +420,6 @@ function initCollectionSearch() {
 function initCollectionThemeToggle() {
     const themeToggle = document.getElementById('themeToggle');
     if (!themeToggle) {
-        console.log('Кнопка темы не найдена');
         return;
     }
     
@@ -436,7 +433,6 @@ function initCollectionThemeToggle() {
             icon.classList.add('bi-sun');
         }
     }
-    
     const newToggle = themeToggle.cloneNode(true);
     themeToggle.parentNode.replaceChild(newToggle, themeToggle);
     
@@ -471,10 +467,8 @@ function initCollectionProfileDropdown() {
     const dropdown = document.getElementById('dropdownMenu');
     
     if (!profileBtn || !dropdown) {
-        console.log('Элементы профиля не найдены');
         return;
     }
-    
     const newProfileBtn = profileBtn.cloneNode(true);
     profileBtn.parentNode.replaceChild(newProfileBtn, profileBtn);
     
@@ -482,8 +476,8 @@ function initCollectionProfileDropdown() {
         e.preventDefault();
         e.stopPropagation();
         dropdown.classList.toggle('show');
+        console.log('Dropdown toggled:', dropdown.classList.contains('show'));
     });
-    
     document.addEventListener('click', (e) => {
         if (!newProfileBtn.contains(e.target) && !dropdown.contains(e.target)) {
             dropdown.classList.remove('show');
@@ -497,11 +491,13 @@ function initCollectionLogout() {
     if (logoutBtn) {
         const newLogoutBtn = logoutBtn.cloneNode(true);
         logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
-        
         newLogoutBtn.addEventListener('click', (e) => {
             e.preventDefault();
             if (confirm('Вы уверены, что хотите выйти?')) {
-                alert('Выход из аккаунта');
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                window.location.href = 'index.html';
             }
         });
     }
@@ -515,4 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initCollectionTagsFilter();
     initCollectionSearch();
     initCollectionViewToggle();
+    initCollectionThemeToggle();
+    initCollectionProfileDropdown();
+    initCollectionLogout();     
 });
