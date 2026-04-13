@@ -20,6 +20,8 @@ from app.schemas.auth import (
     VerifyCodeRequest,
 )
 
+from app.core.send_code import send_auth_code
+
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 
 
@@ -40,8 +42,18 @@ def send_code(body: SendCodeRequest):
         )
     )
 
-    # заглушка
-    print(f"[AUTH CODE] {body.email}: {code}")
+    try:
+        send_auth_code(str(body.email), code)
+        print("Код на почте :)")
+    except RuntimeError as e:
+        print("Код не отправился. Попробуйте выключить впн мб")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
+        )
+
+    # заглушка УДАЛИТЬ
+    # print(f"[AUTH CODE] {body.email}: {code}")
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
