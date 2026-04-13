@@ -1,9 +1,14 @@
+import apiService from './apiService.js';
 
+if (!localStorage.getItem('access_token')) {
+    window.location.href = 'index.html';
+}
 
 let currentCollectionId = null;
 let currentCollection = null;
 let currentViewMode = 'grid';
 let currentCollectionPosts = [];
+let isAdminUser = false;
 
 // Функция для экранирования HTML
 function escapeHtml(str) {
@@ -16,72 +21,80 @@ function escapeHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
+// Проверка авторизации
+function isAuthenticated() {
+    return localStorage.getItem('access_token') !== null;
+}
+
+// Получение статуса админа
+async function checkAdminStatus() {
+    if (window.isAdmin) {
+        isAdminUser = await window.isAdmin();
+    }
+}
+
 // Инициализация страницы коллекции
-function initCollectionDetail() {
-    console.log('initCollectionDetail вызвана');
+async function initCollectionDetail() {
+    if (!isAuthenticated()) {
+        window.location.href = 'index.html';
+        return;
+    }
+    
     const urlParams = new URLSearchParams(window.location.search);
     currentCollectionId = urlParams.get('id');
     
-    console.log('ID коллекции из URL:', currentCollectionId);
-    
     if (!currentCollectionId) {
-        console.error('ID коллекции не найден в URL');
         window.location.href = 'collections.html';
         return;
     }
-    
-    const collections = JSON.parse(localStorage.getItem('collections')) || [];
-    currentCollection = collections.find(c => c.id === currentCollectionId);
-    
-    if (!currentCollection) {
-        console.error('Коллекция не найдена');
+    try {
+        const collections = await apiService.getCollections();
+        currentCollection = collections.find(c => c.id === currentCollectionId);
+        
+        if (!currentCollection) {
+            window.location.href = 'collections.html';
+            return;
+        }
+        
+        const titleElement = document.getElementById('collectionTitle');
+        if (titleElement) {
+            titleElement.textContent = escapeHtml(currentCollection.name);
+        }
+        
+        await checkAdminStatus();
+        await loadCollectionPosts();
+        initCollectionFilters();
+        initCollectionViewToggle();
+        initCollectionSearch();
+        initCollectionThemeToggle();
+        initCollectionProfileDropdown();
+        initCollectionLogout();
+        initBackButton();
+        
+    } catch (error) {
+        console.error('Error loading collection:', error);
         window.location.href = 'collections.html';
-        return;
     }
-    
-    const titleElement = document.getElementById('collectionTitle');
-    if (titleElement) {
-        titleElement.textContent = escapeHtml(currentCollection.name);
-    }
-    
-    loadCollectionPosts();
-    
-    // Инициализируем общие функции
-    initCollectionThemeToggle();
-    initCollectionProfileDropdown();
-    initCollectionLogout();
 }
 
 // Загрузка постов коллекции
-function loadCollectionPosts() {
-    console.log('loadCollectionPosts вызвана');
+async function loadCollectionPosts() {
+    const feedGrid = document.getElementById('feedGrid');
+    if (!feedGrid) return;
     
-    if (!window.feedPosts) {
-        console.error('window.feedPosts не определен!');
-        const feedGrid = document.getElementById('feedGrid');
-        if (feedGrid) {
-            feedGrid.innerHTML = '<div class="no-posts"><i class="bi bi-exclamation-triangle"></i><h3>Ошибка загрузки</h3><p>Данные о местах не найдены</p></div>';
-        }
-        return;
+    feedGrid.innerHTML = '<div class="no-posts"><i class="bi bi-hourglass-split"></i><h3>Загрузка...</h3></div>';
+    
+    try {
+        const collection = await apiService.getOneCollection(currentCollectionId, {});
+        currentCollectionPosts = collection.places || [];
+        
+        renderCollectionFeed();
+        initCollectionCityFilter();
+        initCollectionTagsFilter();
+    } catch (error) {
+        console.error('Error loading posts:', error);
+        feedGrid.innerHTML = '<div class="no-posts"><i class="bi bi-exclamation-triangle"></i><h3>Ошибка загрузки</h3><p>Не удалось загрузить коллекцию</p></div>';
     }
-    
-    console.log('window.feedPosts доступен, количество постов:', window.feedPosts.length);
-    
-    const postCollections = JSON.parse(localStorage.getItem('postCollections')) || [];
-    console.log('postCollections из localStorage:', postCollections);
-    
-    const postIds = postCollections
-        .filter(pc => pc.collectionId === currentCollectionId)
-        .map(pc => pc.postId);
-    
-    console.log('Найденные ID постов в коллекции:', postIds);
-    
-    currentCollectionPosts = window.feedPosts.filter(post => postIds.includes(post.id));
-    
-    console.log('Загружено постов в коллекции:', currentCollectionPosts.length);
-    console.log('Посты в коллекции:', currentCollectionPosts);
-    
-    renderCollectionFeed();
 }
 
 // Рендер ленты коллекции
@@ -91,8 +104,6 @@ function renderCollectionFeed() {
         console.error('Элемент feedGrid не найден');
         return;
     }
-    
-    console.log('renderCollectionFeed, количество постов для отображения:', currentCollectionPosts.length);
     
     feedGrid.className = `feed-grid ${currentViewMode}-view`;
     
@@ -104,7 +115,7 @@ function renderCollectionFeed() {
     
     if (searchTerm) {
         filteredPosts = filteredPosts.filter(post => 
-            post.title.toLowerCase().includes(searchTerm)
+            (post.name || post.title || '').toLowerCase().includes(searchTerm)
         );
     }
     
@@ -114,11 +125,9 @@ function renderCollectionFeed() {
     
     if (selectedTags.length > 0) {
         filteredPosts = filteredPosts.filter(post => 
-            selectedTags.some(tag => post.tags.includes(tag))
+            post.tags && selectedTags.some(tag => post.tags.includes(tag))
         );
     }
-    
-    console.log('Отфильтровано постов:', filteredPosts.length);
     
     if (filteredPosts.length === 0) {
         if (currentCollectionPosts.length === 0) {
@@ -131,10 +140,10 @@ function renderCollectionFeed() {
     
     feedGrid.innerHTML = filteredPosts.map(post => `
         <div class="post-card" data-post-id="${post.id}">
-            <img src="${post.image}" alt="${escapeHtml(post.title)}" class="post-image" onerror="this.src='https://via.placeholder.com/400x200?text=Фото+не+доступно'">
+            <img src="${post.cover_photo || post.image}" alt="${escapeHtml(post.name || post.title)}" class="post-image" onerror="this.src='https://via.placeholder.com/400x200?text=Фото+не+доступно'">
             <div class="post-content">
                 <div class="post-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <h3 class="post-title">${escapeHtml(post.title)}</h3>
+                    <h3 class="post-title">${escapeHtml(post.name || post.title)}</h3>
                     <div class="post-actions-dropdown">
                         <button class="post-menu-btn" onclick="event.stopPropagation(); togglePostMenu(${post.id})">
                             <i class="bi bi-three-dots-vertical"></i>
@@ -150,7 +159,7 @@ function renderCollectionFeed() {
                 <p class="post-description">${escapeHtml(post.description)}</p>
                 <div class="post-footer">
                     <div class="post-tags">
-                        ${post.tags.map(tag => `<span class="post-tag" data-tag="${tag}">#${escapeHtml(tag)}</span>`).join('')}
+                        ${(post.tags || []).map(tag => `<span class="post-tag" data-tag="${tag}">#${escapeHtml(tag)}</span>`).join('')}
                     </div>
                 </div>
             </div>
@@ -169,29 +178,23 @@ function initCollectionCardClicks() {
                 return;
             }
             const postId = this.dataset.postId;
-            if (postId) {
-                if (typeof openPostModal === 'function') {
-                    openPostModal(parseInt(postId));
-                } else {
-                    console.error('openPostModal не определена');
-                    alert('Функция открытия модального окна недоступна');
-                }
+            if (postId && typeof openPostModal === 'function') {
+                openPostModal(parseInt(postId));
             }
         });
     });
 }
 
 // Удаление поста из коллекции
-window.removeFromCollectionDetail = function(postId) {
+window.removeFromCollectionDetail = async function(postId) {
     if (confirm('Вы уверены, что хотите удалить это место из коллекции?')) {
-        let postCollections = JSON.parse(localStorage.getItem('postCollections')) || [];
-        postCollections = postCollections.filter(pc => 
-            !(pc.postId === postId && pc.collectionId === currentCollectionId)
-        );
-        localStorage.setItem('postCollections', JSON.stringify(postCollections));
+        const result = await apiService.removeFromCollection(currentCollectionId, postId);
         
-        console.log('Пост удален из коллекции, загружаем обновленный список');
-        loadCollectionPosts();
+        if (result.success) {
+            await loadCollectionPosts();
+        } else {
+            alert('Ошибка удаления: ' + result.error);
+        }
     }
 };
 
@@ -229,7 +232,6 @@ function initCollectionCityFilter() {
     const selectedDisplay = document.getElementById('selectedCityDisplay');
     
     if (!cityToggle || !cityDropdown) {
-        console.log('Элементы фильтра города не найдены');
         return;
     }
     
@@ -256,7 +258,6 @@ function initCollectionCityFilter() {
         renderCollectionFeed();
         if (cityDropdown) cityDropdown.classList.remove('show');
     };
-    
     const newCityToggle = cityToggle.cloneNode(true);
     cityToggle.parentNode.replaceChild(newCityToggle, cityToggle);
     
@@ -289,7 +290,6 @@ function initCollectionTagsFilter() {
     const selectedTagsContainer = document.getElementById('selectedTagsContainer');
     
     if (!tagsToggle || !tagsDropdown) {
-        console.log('Элементы фильтра тегов не найдены');
         return;
     }
     
@@ -368,6 +368,10 @@ function initCollectionTagsFilter() {
     renderSelectedTags();
 }
 
+
+function initCollectionFilters() {
+}
+
 // Инициализация переключения вида
 function initCollectionViewToggle() {
     const gridBtn = document.getElementById('viewGrid');
@@ -375,7 +379,6 @@ function initCollectionViewToggle() {
     const feedGrid = document.getElementById('feedGrid');
     
     if (!gridBtn || !listBtn || !feedGrid) {
-        console.log('Элементы переключения вида не найдены');
         return;
     }
     
@@ -416,10 +419,24 @@ function initCollectionSearch() {
     }
 }
 
+// Инициализация кнопки "Назад"
+function initBackButton() {
+    const backBtn = document.getElementById('backToCollectionsBtn');
+    if (backBtn) {
+        const newBackBtn = backBtn.cloneNode(true);
+        backBtn.parentNode.replaceChild(newBackBtn, backBtn);
+        newBackBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.href = 'collections.html';
+        });
+    }
+}
+
 // Инициализация переключения темы
 function initCollectionThemeToggle() {
     const themeToggle = document.getElementById('themeToggle');
     if (!themeToggle) {
+        console.log('Кнопка темы не найдена');
         return;
     }
     
@@ -433,6 +450,7 @@ function initCollectionThemeToggle() {
             icon.classList.add('bi-sun');
         }
     }
+    
     const newToggle = themeToggle.cloneNode(true);
     themeToggle.parentNode.replaceChild(newToggle, themeToggle);
     
@@ -467,8 +485,10 @@ function initCollectionProfileDropdown() {
     const dropdown = document.getElementById('dropdownMenu');
     
     if (!profileBtn || !dropdown) {
+        console.log('Элементы профиля не найдены');
         return;
     }
+    
     const newProfileBtn = profileBtn.cloneNode(true);
     profileBtn.parentNode.replaceChild(newProfileBtn, profileBtn);
     
@@ -476,8 +496,8 @@ function initCollectionProfileDropdown() {
         e.preventDefault();
         e.stopPropagation();
         dropdown.classList.toggle('show');
-        console.log('Dropdown toggled:', dropdown.classList.contains('show'));
     });
+    
     document.addEventListener('click', (e) => {
         if (!newProfileBtn.contains(e.target) && !dropdown.contains(e.target)) {
             dropdown.classList.remove('show');
@@ -491,27 +511,16 @@ function initCollectionLogout() {
     if (logoutBtn) {
         const newLogoutBtn = logoutBtn.cloneNode(true);
         logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
+        
         newLogoutBtn.addEventListener('click', (e) => {
             e.preventDefault();
             if (confirm('Вы уверены, что хотите выйти?')) {
-                localStorage.removeItem('currentUser');
-                localStorage.removeItem('access_token');
-                localStorage.removeItem('refresh_token');
-                window.location.href = 'index.html';
+                alert('Выход из аккаунта');
             }
         });
     }
 }
 
-// Запуск при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM загружен, инициализация collection_detail');
     initCollectionDetail();
-    initCollectionCityFilter();
-    initCollectionTagsFilter();
-    initCollectionSearch();
-    initCollectionViewToggle();
-    initCollectionThemeToggle();
-    initCollectionProfileDropdown();
-    initCollectionLogout();     
 });
