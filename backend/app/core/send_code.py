@@ -43,4 +43,3 @@ def send_auth_code(email_to: str, code: str) -> None:
     except Exception as e:
         raise RuntimeError(f"Failed to send email: {e}")
 
-send_auth_code("dariasugarrr@gmail.com", "1234")
