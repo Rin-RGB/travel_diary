@@ -67,7 +67,7 @@ class PlaceCreateRequest(BaseModel):
 
 
 class PlaceStatusResponse(BaseModel):
-    id: UUID
+    id: int
     status: str
 
     model_config = ConfigDict(from_attributes=True)
