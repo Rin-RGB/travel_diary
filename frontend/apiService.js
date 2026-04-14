@@ -7,13 +7,11 @@ class ApiService {
         this.posts = [];
     }
 
-    // Вход
     async login(email, code) {
         try {
             const response = await api.verifyCode(email, code);
             this.isAuthenticated = true;
             
-            // Данные пользователя
             const userData = await api.currentUserData();
             this.currentUser = userData;
             localStorage.setItem('currentUser', JSON.stringify(userData));
@@ -21,11 +19,10 @@ class ApiService {
             return { success: true, user: userData };
         } catch (error) {
             console.error('Login error:', error);
-            return { success: false, error: error.response?.data?.message || 'Ошибка входа' };
+            return { success: false, error: error.response?.data?.detail || 'Ошибка входа' };
         }
     }
 
-    // Выход
     logout() {
         this.isAuthenticated = false;
         this.currentUser = null;
@@ -34,7 +31,17 @@ class ApiService {
         localStorage.removeItem('currentUser');
     }
 
-    // Загрузка ленты
+    async getCurrentUser() {
+        try {
+            if (this.currentUser) return this.currentUser;
+            const userData = await api.currentUserData();
+            this.currentUser = userData;
+            return userData;
+        } catch (error) {
+            return null;
+        }
+    }
+
     async loadPlaces(params = {}) {
         try {
             const response = await api.getPlaces(params);
@@ -46,7 +53,6 @@ class ApiService {
         }
     }
 
-    // Получение городов
     async getCities() {
         try {
             const response = await api.getCities();
@@ -57,7 +63,6 @@ class ApiService {
         }
     }
 
-    // Получение тегов
     async getTags() {
         try {
             const response = await api.checkTags();
@@ -68,37 +73,33 @@ class ApiService {
         }
     }
 
-    // Создание места (админ)
     async createPlace(placeData) {
         try {
             const response = await api.createPlaceAdmin(placeData);
             return { success: true, data: response };
         } catch (error) {
-            return { success: false, error: error.response?.data?.message };
+            return { success: false, error: error.response?.data?.detail || 'Ошибка создания' };
         }
     }
 
-    // Редактирование места (админ)
     async updatePlace(id, updateData) {
         try {
             const response = await api.editPlace(id, updateData);
             return { success: true, data: response };
         } catch (error) {
-            return { success: false, error: error.response?.data?.message };
+            return { success: false, error: error.response?.data?.detail || 'Ошибка обновления' };
         }
     }
 
-    // Удаление места (админ)
     async removePlace(id) {
         try {
             await api.deletePlace(id);
             return { success: true };
         } catch (error) {
-            return { success: false, error: error.response?.data?.message };
+            return { success: false, error: error.response?.data?.detail || 'Ошибка удаления' };
         }
     }
 
-    // Получение коллекций
     async getCollections() {
         try {
             const response = await api.allUserFolders();
@@ -109,43 +110,68 @@ class ApiService {
         }
     }
 
-    // Создание коллекции
     async createCollection(name) {
         try {
             const response = await api.addCollection(name);
             return { success: true, data: response };
         } catch (error) {
-            return { success: false, error: error.response?.data?.message };
+            return { success: false, error: error.response?.data?.detail || 'Ошибка создания' };
         }
     }
 
-    // Добавление места в коллекцию
+    async editCollection(id, name) {
+        try {
+            const response = await api.editCollection(id, name);
+            return { success: true, data: response };
+        } catch (error) {
+            return { success: false, error: error.response?.data?.detail || 'Ошибка редактирования' };
+        }
+    }
+
+    async deleteCollection(id) {
+        try {
+            await api.deleteFolder(id);
+            return { success: true };
+        } catch (error) {
+            console.error('Delete collection error:', error);
+            return { success: false, error: error.response?.data?.detail || 'Ошибка удаления' };
+        }
+    }
+
     async addToCollection(folderId, placeId) {
         try {
             await api.addPlaceInCollection(folderId, placeId);
             return { success: true };
         } catch (error) {
-            return { success: false, error: error.response?.data?.message };
+            return { success: false, error: error.response?.data?.detail || 'Ошибка добавления' };
         }
     }
 
-    // Удаление места из коллекции
     async removeFromCollection(folderId, placeId) {
         try {
             await api.deletePlaceFromCollection(folderId, placeId);
             return { success: true };
         } catch (error) {
-            return { success: false, error: error.response?.data?.message };
+            return { success: false, error: error.response?.data?.detail || 'Ошибка удаления' };
         }
     }
 
-    // Изменение роли (админ)
     async changeUserRole(userId, role) {
         try {
             const response = await api.changeRole(userId, role);
             return { success: true, data: response };
         } catch (error) {
-            return { success: false, error: error.response?.data?.message };
+            return { success: false, error: error.response?.data?.detail || 'Ошибка изменения роли' };
+        }
+    }
+
+    async getOneCollection(id, params = {}) {
+        try {
+            const response = await api.getOneCollection(id, params);
+            return response;
+        } catch (error) {
+            console.error('Get one collection error:', error);
+            return { places: [] };
         }
     }
 }
