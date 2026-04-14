@@ -39,21 +39,23 @@ async function loadTags() {
     try {
         const tags = await api.checkTags();
         const container = document.getElementById('tagsContainer');
-        if (container && tags.length > 0) {
-            container.innerHTML = tags.map(tag => `
-                <label class="tag-checkbox-item">
-                    <input type="checkbox" value="${tag.id}">
-                    <span>#${escapeHtml(tag.name)}</span>
-                </label>
-            `).join('');
-        } else {
-            container.innerHTML = '<p class="no-tags">Нет доступных тегов</p>';
-        }
+        if (!container) return;
+        
+        container.innerHTML = tags.map(tag => `
+            <label class="tag-checkbox-item">
+                <input type="checkbox" value="${tag.id}">
+                <span>#${tag.name}</span>
+            </label>
+        `).join('');
     } catch (error) {
         console.error('Error loading tags:', error);
     }
 }
 
+function getSelectedTags() {
+    const checkboxes = document.querySelectorAll('#tagsContainer input:checked');
+    return Array.from(checkboxes).map(cb => cb.value);
+}
 function getSelectedTags() {
     const checkboxes = document.querySelectorAll('#tagsContainer input:checked');
     return Array.from(checkboxes).map(cb => cb.value);
@@ -77,13 +79,14 @@ async function createPlace(event) {
         alert('Выберите город');
         return;
     }
+    const selectedTags = getSelectedTags();
     const placeData = {
         name: name,
         city_id: cityId,
         address: address,
         description: description,
         photo_urls: photoUrl ? [photoUrl] : [],
-        tags: tags
+        tags: selectedTags
     };
     
     console.log('Sending place data:', placeData);

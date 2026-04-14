@@ -87,9 +87,6 @@ async function renderCollectionsList() {
                             <button onclick="event.stopPropagation(); editCollectionName('${collection.id}')">
                                 <i class="bi bi-pencil"></i> Редактировать
                             </button>
-                            <button onclick="event.stopPropagation(); deleteCollection('${collection.id}')">
-                                <i class="bi bi-trash"></i> Удалить
-                            </button>
                         </div>
                     </div>
                 </div>

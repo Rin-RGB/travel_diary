@@ -1989,3 +1989,23 @@ display: flex;
     font-size: 14px;
     padding: 12px 0;
 }
+.tags-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px 0;
+}
+
+.tag-checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: var(--tag-bg);
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+.tag-checkbox-item input {
+    cursor: pointer;
+}

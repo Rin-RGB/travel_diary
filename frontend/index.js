@@ -1,4 +1,3 @@
-
 const apiClient = axios.create({
     baseURL: "http://localhost:8000/api/",
     headers: {
@@ -182,6 +181,10 @@ export const api = {
     //4.6
     deletePlaceFromCollection: async(folderId, placeId) => {
         let response = await apiClient.delete(`/v1/folders/${folderId}/places/${placeId}`);
+        return response.data;
+    },
+    deleteFolder: async(id) => {
+        let response = await apiClient.delete(`v1/folders/${id}`);
         return response.data;
     },
 
