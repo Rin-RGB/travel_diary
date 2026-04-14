@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends, status, Response
 
 from app.db.models import Place
 from app.db.storage.storage import Storage
@@ -11,7 +11,12 @@ from app.schemas.place import (
     TagResponse,
     PhotoResponse,
     CityResponse,
+    PlaceCreateRequest,
+    PlaceUpdateRequest,
+    PlaceAdminResponse,
+    PlaceStatusResponse,
 )
+from app.core.deps import get_current_admin
 
 router = APIRouter(prefix="/api/v1/places", tags=["Places"])
 
@@ -75,6 +80,35 @@ def _to_place_detail(place: Place) -> PlaceDetailResponse:
     )
 
 
+def _to_place_admin_detail(place: Place) -> PlaceAdminResponse:
+    return PlaceAdminResponse(
+        id=place.id,
+        name=place.name,
+        address=place.address,
+        city=CityResponse(
+            id=place.city.id,
+            city=place.city.city,
+        ),
+        description=place.description,
+        lat=float(place.lat) if place.lat is not None else None,
+        lon=float(place.lon) if place.lon is not None else None,
+        tags=_get_tags(place),
+        photos=[
+            PhotoResponse(
+                id=photo.id,
+                url=photo.url,
+                is_cover=photo.is_cover,
+            )
+            for photo in place.photos
+        ],
+        status=PlaceStatusResponse(
+            id=place.status.id,
+            status=place.status.status,
+        ),
+        created_at=place.created_at,
+    )
+
+
 @router.get("", response_model=PlacesListResponse)
 def get_places(
     q: str | None = Query(default=None),
@@ -113,7 +147,6 @@ def get_places(
     )
 
 
-
 @router.get("/{place_id}", response_model=PlaceDetailResponse)
 def get_place_by_id(place_id: UUID):
     storage = Storage()
@@ -130,3 +163,65 @@ def get_place_by_id(place_id: UUID):
         raise HTTPException(status_code=404, detail="Place not found")
 
     return result
+
+
+@router.post("", response_model=PlaceAdminResponse, status_code=status.HTTP_201_CREATED)
+def create_place(
+    data: PlaceCreateRequest,
+    current_admin = Depends(get_current_admin),
+):
+    storage = Storage()
+
+    def _f(ctx):
+        place = ctx.places.create_place(data=data, admin_id=current_admin.id)
+        return _to_place_admin_detail(place)
+
+    try:
+        return storage.run(_f)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.patch("/{place_id}", response_model=PlaceAdminResponse)
+def update_place(
+    place_id: UUID,
+    data: PlaceUpdateRequest,
+    current_admin = Depends(get_current_admin),
+):
+    storage = Storage()
+
+    def _f(ctx):
+        place = ctx.places.update_place(place_id=place_id, data=data)
+        return _to_place_admin_detail(place)
+
+    try:
+        return storage.run(_f)
+    except ValueError as e:
+        if str(e) == "Place not found":
+            raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/{place_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_place(
+    place_id: UUID,
+    current_admin = Depends(get_current_admin),
+):
+    storage = Storage()
+
+    def _f(ctx):
+        ctx.places.delete_place(place_id)
+
+    try:
+        storage.run(_f)
+    except ValueError as e:
+        if str(e) == "Place not found":
+            raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

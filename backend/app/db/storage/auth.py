@@ -5,6 +5,7 @@ from app.core.reference_data import USER_ROLES
 from app.db.models import EmailCode, User, Folder
 
 
+
 class AuthStorage:
     def __init__(self, session: Session) -> None:
         self.session = session
