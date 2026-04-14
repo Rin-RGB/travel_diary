@@ -70,10 +70,7 @@ async function updateAdminStatus() {
 }
 
 function getTagColorIndex(tag) {
-    const colorMap = {
-        'театр': 2, 'курорт': 3, 'вулкан': 4, 'водопад': 5, 'музей': 1, 'гейзер': 5, 'море': 5
-    };
-    return colorMap[tag] || 'default';
+    return 'default';
 }
 
 function renderTagsDropdown() {
