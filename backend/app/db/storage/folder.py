@@ -223,6 +223,24 @@ class FoldersStorage:
         self.session.add(folder_place)
         self.session.flush()
 
+    def delete(
+            self,
+            *,
+            folder_id: UUID,
+            user_id: UUID,
+    ) -> None:
+        folder_stmt = select(Folder).where(Folder.id == folder_id)
+        folder = self.session.execute(folder_stmt).scalar_one_or_none()
+
+        if not folder:
+            raise ValueError("Folder not found")
+
+        if folder.id_user != user_id:
+            raise PermissionError("No access to this folder")
+
+        self.session.delete(folder)
+        self.session.flush()
+
     def remove_place(
             self,
             *,

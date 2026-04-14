@@ -181,3 +181,31 @@ def remove_place_from_folder(
         )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.delete("/{folder_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_folder(
+    folder_id: UUID,
+    current_user=Depends(get_current_user),
+):
+    storage = Storage()
+
+    try:
+        storage.run(
+            lambda ctx: ctx.folders.delete(
+                folder_id=folder_id,
+                user_id=current_user.id,
+            )
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+    except PermissionError as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
