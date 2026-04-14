@@ -62,19 +62,15 @@ function showLoginModal(callback) {
     if (modal) {
         modal.style.display = 'flex';
         window.pendingAuthCallback = callback;
-        
         const emailInput = document.getElementById('loginEmail');
         const codeInput = document.getElementById('loginCode');
         const sendCodeBtn = document.getElementById('sendCodeBtn');
         const submitBtn = document.getElementById('loginSubmitBtn');
-        
         if (emailInput) emailInput.value = '';
-        if (codeInput) {
-            codeInput.style.display = 'none';
-            codeInput.value = '';
-        }
+        if (codeInput) codeInput.value = '';
+        if (codeInput) codeInput.style.display = 'block';
         if (sendCodeBtn) sendCodeBtn.style.display = 'block';
-        if (submitBtn) submitBtn.style.display = 'none';
+        if (submitBtn) submitBtn.style.display = 'block';
     }
 }
 
@@ -106,7 +102,11 @@ function switchToLogin() {
 
 async function sendLoginCode() {
     const email = document.getElementById('loginEmail').value.trim();
-    
+    const code = document.getElementById('loginCode').value.trim();
+    if (code && code.length === 6) {
+        await handleLoginWithCode(new Event('submit'));
+        return;
+    }
     if (!email) {
         alert('Введите email');
         return;
@@ -116,15 +116,11 @@ async function sendLoginCode() {
         const response = await api.sendCode(email);
         
         if (response) {
-            const codeInput = document.getElementById('loginCode');
-            const sendCodeBtn = document.getElementById('sendCodeBtn');
-            const submitBtn = document.getElementById('loginSubmitBtn');
-            
-            if (codeInput) codeInput.style.display = 'block';
-            if (sendCodeBtn) sendCodeBtn.style.display = 'none';
-            if (submitBtn) submitBtn.style.display = 'block';
-            
             alert(`Код отправлен на ${email}`);
+            const codeInput = document.getElementById('loginCode');
+            if (codeInput) {
+                codeInput.focus();
+            }
         }
     } catch (error) {
         console.error('Send code error:', error);
