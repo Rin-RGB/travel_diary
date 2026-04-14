@@ -113,14 +113,12 @@ async function sendLoginCode() {
     }
     
     try {
-        const response = await api.sendCode(email);
+        await api.sendCode(email);
         
-        if (response) {
-            alert(`Код отправлен на ${email}`);
-            const codeInput = document.getElementById('loginCode');
-            if (codeInput) {
-                codeInput.focus();
-            }
+        alert(`Код отправлен на ${email}`);
+        const codeInput = document.getElementById('loginCode');
+        if (codeInput) {
+            codeInput.focus();
         }
     } catch (error) {
         console.error('Send code error:', error);
@@ -190,69 +188,69 @@ function escapeHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    updateUIForUser();
+// document.addEventListener('DOMContentLoaded', function() {
+//     updateUIForUser();
     
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) loginForm.addEventListener('submit', handleLoginWithCode);
+//     const loginForm = document.getElementById('loginForm');
+//     if (loginForm) loginForm.addEventListener('submit', handleLoginWithCode);
     
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            logout();
-        });
-    }
+//     const logoutBtn = document.getElementById('logoutBtn');
+//     if (logoutBtn) {
+//         logoutBtn.addEventListener('click', (e) => {
+//             e.preventDefault();
+//             logout();
+//         });
+//     }
     
-    const suggestPlaceBtn = document.getElementById('suggestPlaceBtn');
-    if (suggestPlaceBtn) {
-        suggestPlaceBtn.addEventListener('click', () => {
-            alert('Функция добавления места в разработке');
-        });
-    }
+//     const suggestPlaceBtn = document.getElementById('suggestPlaceBtn');
+//     if (suggestPlaceBtn) {
+//         suggestPlaceBtn.addEventListener('click', () => {
+//             window.location.href = 'suggest_place.html';
+//         });
+//     }
     
-    const adminManageBtn = document.getElementById('adminManageBtn');
-    if (adminManageBtn) {
-        adminManageBtn.addEventListener('click', () => {
-            alert('Функция управления администраторами в разработке');
-        });
-    }
+//     const adminManageBtn = document.getElementById('adminManageBtn');
+//     if (adminManageBtn) {
+//         adminManageBtn.addEventListener('click', () => {
+//             alert('Функция управления администраторами в разработке');
+//         });
+//     }
     
-    const collectionsMenuItem = document.getElementById('collectionsMenuItem');
-    if (collectionsMenuItem) {
-        collectionsMenuItem.addEventListener('click', (e) => {
-            e.preventDefault();
-            requireAuth('collections.html');
-        });
-    }
+//     const collectionsMenuItem = document.getElementById('collectionsMenuItem');
+//     if (collectionsMenuItem) {
+//         collectionsMenuItem.addEventListener('click', (e) => {
+//             e.preventDefault();
+//             requireAuth('collections.html');
+//         });
+//     }
     
-    const settingsMenuItem = document.getElementById('settingsMenuItem');
-    if (settingsMenuItem) {
-        settingsMenuItem.addEventListener('click', (e) => {
-            e.preventDefault();
-            requireAuth('settings.html');
-        });
-    }
+//     const settingsMenuItem = document.getElementById('settingsMenuItem');
+//     if (settingsMenuItem) {
+//         settingsMenuItem.addEventListener('click', (e) => {
+//             e.preventDefault();
+//             requireAuth('settings.html');
+//         });
+//     }
     
-    const loginMenuItem = document.getElementById('loginMenuItem');
-    if (loginMenuItem) {
-        loginMenuItem.addEventListener('click', (e) => {
-            e.preventDefault();
-            showLoginModal();
-        });
-    }
+//     const loginMenuItem = document.getElementById('loginMenuItem');
+//     if (loginMenuItem) {
+//         loginMenuItem.addEventListener('click', (e) => {
+//             e.preventDefault();
+//             showLoginModal();
+//         });
+//     }
     
-    const registerMenuItem = document.getElementById('registerMenuItem');
-    if (registerMenuItem) {
-        registerMenuItem.addEventListener('click', (e) => {
-            e.preventDefault();
-            const registerModal = document.getElementById('registerModal');
-            if (registerModal) registerModal.style.display = 'flex';
-        });
-    }
+//     const registerMenuItem = document.getElementById('registerMenuItem');
+//     if (registerMenuItem) {
+//         registerMenuItem.addEventListener('click', (e) => {
+//             e.preventDefault();
+//             const registerModal = document.getElementById('registerModal');
+//             if (registerModal) registerModal.style.display = 'flex';
+//         });
+//     }
     
-    addAuthStyles();
-});
+//     addAuthStyles();
+// });
 
 function addAuthStyles() {
     if (document.getElementById('auth-styles')) return;
@@ -356,6 +354,121 @@ function addAuthStyles() {
     `;
     document.head.appendChild(styles);
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    // ========== АВТОРИЗАЦИЯ И UI ==========
+    updateUIForUser();
+    
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) loginForm.addEventListener('submit', handleLoginWithCode);
+    
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            logout();
+        });
+    }
+    
+    const suggestPlaceBtn = document.getElementById('suggestPlaceBtn');
+    if (suggestPlaceBtn) {
+        suggestPlaceBtn.addEventListener('click', () => {
+            window.location.href = 'suggest_place.html';
+        });
+    }
+    
+    const adminManageBtn = document.getElementById('adminManageBtn');
+    if (adminManageBtn) {
+        adminManageBtn.addEventListener('click', () => {
+            alert('Функция управления администраторами в разработке');
+        });
+    }
+    
+    const collectionsMenuItem = document.getElementById('collectionsMenuItem');
+    if (collectionsMenuItem) {
+        collectionsMenuItem.addEventListener('click', (e) => {
+            e.preventDefault();
+            requireAuth('collections.html');
+        });
+    }
+    
+    const settingsMenuItem = document.getElementById('settingsMenuItem');
+    if (settingsMenuItem) {
+        settingsMenuItem.addEventListener('click', (e) => {
+            e.preventDefault();
+            requireAuth('settings.html');
+        });
+    }
+    
+    const loginMenuItem = document.getElementById('loginMenuItem');
+    if (loginMenuItem) {
+        loginMenuItem.addEventListener('click', (e) => {
+            e.preventDefault();
+            showLoginModal();
+        });
+    }
+    
+    const registerMenuItem = document.getElementById('registerMenuItem');
+    if (registerMenuItem) {
+        registerMenuItem.addEventListener('click', (e) => {
+            e.preventDefault();
+            const registerModal = document.getElementById('registerModal');
+            if (registerModal) registerModal.style.display = 'flex';
+        });
+    }
+    
+    addAuthStyles();
+    
+    // ========== ТЕМА И ПРОФИЛЬ ==========
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        const icon = themeToggle.querySelector('i');
+        const savedTheme = localStorage.getItem('theme');
+        
+        if (savedTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            if (icon) {
+                icon.classList.remove('bi-moon');
+                icon.classList.add('bi-sun');
+            }
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            const html = document.documentElement;
+            if (html.hasAttribute('data-theme')) {
+                html.removeAttribute('data-theme');
+                if (icon) {
+                    icon.classList.remove('bi-sun');
+                    icon.classList.add('bi-moon');
+                }
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.setAttribute('data-theme', 'dark');
+                if (icon) {
+                    icon.classList.remove('bi-moon');
+                    icon.classList.add('bi-sun');
+                }
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+    }
+    
+    const profileBtn = document.getElementById('profileBtn');
+    const dropdown = document.getElementById('dropdownMenu');
+    
+    if (profileBtn && dropdown) {
+        profileBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle('show');
+        });
+        
+        document.addEventListener('click', (e) => {
+            if (!profileBtn.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+    }
+});
 
 window.sendLoginCode = sendLoginCode;
 window.closeLoginModal = closeLoginModal;

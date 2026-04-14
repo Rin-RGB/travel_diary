@@ -13,7 +13,6 @@
 </head>
 <body>
     <div class="container">
-        <!-- Шапка с логотипом, названием и иконками -->
         <header class="header">
             <div class="logo-container">
                 <img src="images/logo.svg" alt="Логотип" class="logo-img">
@@ -46,7 +45,6 @@
             </div>
         </header>
 
-        <!-- Основной контейнер с формой -->
         <div class="content-container suggest-container">
             <div class="top-row">
                 <div class="top-row-left">
@@ -54,12 +52,11 @@
                         <i class="bi bi-arrow-left"></i>
                         <span>К ленте</span>
                     </a>
-                    <h1 class="section-title">Предложить место</h1> 
+                    <h1 class="section-title">Добавить место</h1> 
                 </div>
             </div>
 
             <form id="suggestForm" class="suggest-form">
-                <!-- Название -->
                 <div class="form-group">
                     <label for="placeTitle" class="form-label">
                         Название места <span class="required">*</span>
@@ -67,169 +64,44 @@
                     <input type="text" id="placeTitle" class="form-input" placeholder="Например: Музей Космонавтики" required>
                 </div>
 
-                <!-- Город -->
                 <div class="form-group">
                     <label for="placeCity" class="form-label">
                         Город <span class="required">*</span>
                     </label>
-                    <input type="text" id="placeCity" class="form-input" placeholder="Например: Москва" required>
+                    <select id="placeCity" class="form-input" required>
+                        <option value="">Выберите город</option>
+                    </select>
                 </div>
 
-                <!-- Описание -->
+                <div class="form-group">
+                    <label for="placeAddress" class="form-label">Адрес</label>
+                    <input type="text" id="placeAddress" class="form-input" placeholder="Улица, дом">
+                </div>
+
                 <div class="form-group">
                     <label for="placeDescription" class="form-label">Описание</label>
-                    <textarea id="placeDescription" class="form-textarea" rows="4" placeholder="Расскажите о месте... (необязательно)"></textarea>
+                    <textarea id="placeDescription" class="form-textarea" rows="4" placeholder="Расскажите о месте..."></textarea>
                 </div>
 
-                <!-- Фотография -->
                 <div class="form-group">
-                    <label for="placeImage" class="form-label">Фотография</label>
-                    <div class="file-upload">
-                        <input type="file" id="placeImage" class="file-input" accept="image/*">
-                        <label for="placeImage" class="file-label">
-                            <i class="bi bi-cloud-upload"></i>
-                            <span>Выберите файл или перетащите</span>
-                        </label>
-                        <div class="file-name" id="fileName">Файл не выбран</div>
-                    </div>
+                    <label class="form-label">Теги</label>
+                    <div id="tagsContainer" class="tags-checkboxes"></div>
                 </div>
 
-                <!-- Кнопка отправки -->
+                <div class="form-group">
+                    <label for="placeImage" class="form-label">Фотография (URL)</label>
+                    <input type="url" id="placeImage" class="form-input" placeholder="https://example.com/photo.jpg">
+                </div>
+
                 <div class="form-actions">
-                    <button type="submit" class="submit-btn" id="submitPlaceBtn">Предложить место</button>
+                    <button type="submit" class="submit-btn" id="submitPlaceBtn">Создать место</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <script src="script.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const fileInput = document.getElementById('placeImage');
-            const fileName = document.getElementById('fileName');
-            
-            if (fileInput) {
-                fileInput.addEventListener('change', function() {
-                    if (this.files && this.files[0]) {
-                        fileName.textContent = this.files[0].name;
-                    } else {
-                        fileName.textContent = 'Файл не выбран';
-                    }
-                });
-            }
-
-            // Обработка отправки формы
-            const form = document.getElementById('suggestForm');
-            if (form) {
-                form.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    const title = document.getElementById('placeTitle').value.trim();
-                    const city = document.getElementById('placeCity').value.trim();
-                    
-                    if (!title || !city) {
-                        alert('Пожалуйста, заполните обязательные поля (название и город)');
-                        return;
-                    }
-
-                    alert('Спасибо! Ваше предложение отправлено на рассмотрение модераторам сайта.');
-
-                    form.reset();
-                    fileName.textContent = 'Файл не выбран';
-                });
-            }
-        });
-    </script>
-    <script>
-        // Защита страницы - если не авторизован, перенаправляем на ленту
-        if (typeof isAuthenticated === 'function' && !isAuthenticated()) {
-            window.location.href = 'index.html';
-        }
-    </script>
-    <script src="script.js"></script>
-    <script src="auth.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const fileInput = document.getElementById('placeImage');
-            const fileName = document.getElementById('fileName');
-            let uploadedImageData = null;
-            
-            if (fileInput) {
-                fileInput.addEventListener('change', function() {
-                    if (this.files && this.files[0]) {
-                        const file = this.files[0];
-                        fileName.textContent = file.name;
-                        
-                        // Преобразуем изображение в base64 для сохранения
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            uploadedImageData = e.target.result;
-                        };
-                        reader.readAsDataURL(file);
-                    } else {
-                        fileName.textContent = 'Файл не выбран';
-                        uploadedImageData = null;
-                    }
-                });
-            }
-
-            // Обработка отправки формы
-            const form = document.getElementById('suggestForm');
-            if (form) {
-                form.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    const title = document.getElementById('placeTitle').value.trim();
-                    const city = document.getElementById('placeCity').value.trim();
-                    const description = document.getElementById('placeDescription').value.trim();
-                    
-                    if (!title || !city) {
-                        alert('Пожалуйста, заполните обязательные поля (название и город)');
-                        return;
-                    }
-                    
-                    // Создаем новый пост
-                    const newPost = {
-                        id: Date.now(),
-                        title: title,
-                        city: city,
-                        description: description || 'Новое место',
-                        image: uploadedImageData || 'https://via.placeholder.com/400x200?text=Новое+место',
-                        date: new Date().toLocaleDateString('ru-RU'),
-                        address: '',
-                        tags: []
-                    };
-                    
-                    // Добавляем в ленту
-                    if (window.feedPosts) {
-                        window.feedPosts.push(newPost);
-                        localStorage.setItem('feedPosts', JSON.stringify(window.feedPosts));
-                        alert('Спасибо! Ваше предложение отправлено на рассмотрение модераторам сайта.');
-                    } else {
-                        alert('Ошибка: данные не загружены');
-                        return;
-                    }
-                    
-                    form.reset();
-                    fileName.textContent = 'Файл не выбран';
-                    uploadedImageData = null;
-                });
-            }
-        });
-    </script>
-    <script>
-        // Защита страницы - только для администраторов
-        if (typeof isAdmin === 'function') {
-            if (!isAdmin()) {
-                alert('Только администраторы могут предлагать места');
-                window.location.href = 'index.html';
-            }
-        } else {
-            setTimeout(() => {
-                if (typeof isAdmin === 'function' && !isAdmin()) {
-                    alert('Только администраторы могут предлагать места');
-                    window.location.href = 'index.html';
-                }
-            }, 100);
-        }
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script type="module" src="auth.js"></script>
+    <script type="module" src="suggest_place.js"></script>
 </body>
 </html>

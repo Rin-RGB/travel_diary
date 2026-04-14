@@ -1,31 +1,8 @@
+// import axios from 'axios';
+import apiService from './apiService.js';
+
 let userCollections = [];
-let postCollections = [];
-
-window.isAuthenticated = function() {
-    return localStorage.getItem('currentUser') !== null;
-};
-
-window.isAdmin = function() {
-    const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    return user.role === 'admin';
-};
-
-window.updateUIForUser = function() {
-};
-
-function loadCollectionsData() {
-    userCollections = JSON.parse(localStorage.getItem('collections')) || [];
-    postCollections = JSON.parse(localStorage.getItem('postCollections')) || [];
-    
-    // Если нет коллекций - создаем стандартные
-    if (userCollections.length === 0) {
-        userCollections = [
-            { id: 'want-to-visit', name: 'Хочу посетить', editable: false },
-            { id: 'visited', name: 'Посещено', editable: false }
-        ];
-        localStorage.setItem('collections', JSON.stringify(userCollections));
-    }
-}
+let allPlaces = [];
 
 // Функция для экранирования HTML
 function escapeHtml(str) {
@@ -38,79 +15,109 @@ function escapeHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
-// Функция рендеринга списка коллекций
-function renderCollectionsList() {
-    const container = document.getElementById('collectionsList');
-    if (!container) {
-        return;
+async function loadCollectionsFromBackend() {
+    try {
+        userCollections = await apiService.getCollections();
+        return userCollections;
+    } catch (error) {
+        console.error('Error loading collections:', error);
+        return [];
     }
+}
 
-    loadCollectionsData();
-    
-    const posts = window.feedPosts || [];
+async function loadAllPlaces() {
+    try {
+        const response = await api.getPlaces({ limit: 100 });
+        allPlaces = response.items || [];
+        return allPlaces;
+    } catch (error) {
+        console.error('Error loading places:', error);
+        return [];
+    }
+}
+
+async function getCollectionPlacesCount(collectionId) {
+    try {
+        const collection = await apiService.getOneCollection(collectionId, { limit: 1 });
+        return collection.total || 0;
+    } catch (error) {
+        console.error('Error getting collection places count:', error);
+        return 0;
+    }
+}
+
+async function getCollectionPreview(collectionId) {
+    try {
+        const collection = await apiService.getOneCollection(collectionId, { limit: 3 });
+        return collection.places || [];
+    } catch (error) {
+        console.error('Error getting collection preview:', error);
+        return [];
+    }
+}
+
+async function renderCollectionsList() {
+    const container = document.getElementById('collectionsList');
+    if (!container) return;
+    await loadCollectionsFromBackend();
 
     if (userCollections.length === 0) {
-        container.innerHTML = '<div class="no-posts"><h3>Нет коллекций</h3><p>Создайте первую коллекцию</p></div>';
+        container.innerHTML = '<div class="no-posts"><i class="bi bi-folder"></i><h3>Нет коллекций</h3><p>Создайте первую коллекцию</p></div>';
         return;
     }
 
+    container.innerHTML = '<div class="loading">Загрузка коллекций...</div>';
     let html = '';
-    userCollections.forEach(collection => {
-        const postIds = postCollections
-            .filter(pc => pc.collectionId === collection.id)
-            .map(pc => pc.postId);
-        const collectionPosts = posts.filter(post => postIds.includes(post.id));
-
+    for (const collection of userCollections) {
+        const previewPlaces = await getCollectionPreview(collection.id);
+        const placesCount = await getCollectionPlacesCount(collection.id);
+        
         html += `
             <div class="collection-card" data-collection-id="${collection.id}">
                 <div class="collection-header">
                     <div class="collection-title-wrapper">
                         <h2 class="collection-title">${escapeHtml(collection.name)}</h2>
-                        <span class="collection-count">${collectionPosts.length}</span>
+                        <span class="collection-count">${placesCount}</span>
                     </div>
-                    ${collection.editable ? `
-                        <div class="collection-actions-dropdown">
-                            <button class="collection-menu-btn" onclick="event.stopPropagation(); toggleCollectionMenu('${collection.id}')">
-                                <i class="bi bi-three-dots-vertical"></i>
+                    <div class="collection-actions-dropdown">
+                        <button class="collection-menu-btn" onclick="event.stopPropagation(); toggleCollectionMenu('${collection.id}')">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <div class="collection-menu" id="menu-${collection.id}">
+                            <button onclick="event.stopPropagation(); editCollectionName('${collection.id}')">
+                                <i class="bi bi-pencil"></i> Редактировать
                             </button>
-                            <div class="collection-menu" id="menu-${collection.id}">
-                                <button onclick="event.stopPropagation(); editCollectionName('${collection.id}')">
-                                    <i class="bi bi-pencil"></i> Редактировать
-                                </button>
-                                <button onclick="event.stopPropagation(); deleteCollection('${collection.id}')">
-                                    <i class="bi bi-trash"></i> Удалить
-                                </button>
-                            </div>
+                            <button onclick="event.stopPropagation(); deleteCollection('${collection.id}')">
+                                <i class="bi bi-trash"></i> Удалить
+                            </button>
                         </div>
-                    ` : ''}
+                    </div>
                 </div>
                 <div class="collection-preview">
-                    ${renderCollectionPreview(collectionPosts)}
+                    ${renderCollectionPreview(previewPlaces)}
                 </div>
             </div>
         `;
-    });
+    }
     
     container.innerHTML = html;
+    initCollectionClicks();
 }
 
-// Превью коллекции (первые 3 картинки)
-function renderCollectionPreview(posts) {
-    if (posts.length === 0) {
+function renderCollectionPreview(places) {
+    if (!places || places.length === 0) {
         return '<div class="collection-empty-text">Нет мест в коллекции</div>';
     }
     
-    const previewPosts = posts.slice(0, 3);
     return `
         <div class="collection-preview-images">
-            ${previewPosts.map(post => `
-                <img src="${post.cover_photo || post.image}" class="preview-image" onerror="this.src='https://via.placeholder.com/80x80'">
+            ${places.slice(0, 3).map(place => `
+                <img src="${place.cover_photo || ''}" class="preview-image" onerror="this.src='https://via.placeholder.com/80x80?text=Нет+фото'">
             `).join('')}
         </div>
     `;
 }
 
-// Переключение меню коллекции
 window.toggleCollectionMenu = function(collectionId) {
     const menu = document.getElementById(`menu-${collectionId}`);
     if (!menu) return;
@@ -124,45 +131,45 @@ window.toggleCollectionMenu = function(collectionId) {
     menu.classList.toggle('show');
 };
 
-// Редактирование названия коллекции
-window.editCollectionName = function(collectionId) {
+window.editCollectionName = async function(collectionId) {
     const collection = userCollections.find(c => c.id === collectionId);
-    if (!collection || !collection.editable) return;
+    if (!collection) return;
 
     const newName = prompt('Введите новое название для коллекции:', collection.name);
     if (newName && newName.trim() !== '') {
-        collection.name = newName.trim();
-        localStorage.setItem('collections', JSON.stringify(userCollections));
-        renderCollectionsList();
+        const result = await apiService.editCollection(collectionId, newName.trim());
+        if (result.success) {
+            await renderCollectionsList();
+        } else {
+            alert('Ошибка редактирования: ' + result.error);
+        }
     }
 };
 
-// Удаление коллекции
-window.deleteCollection = function(collectionId) {
+window.deleteCollection = async function(collectionId) {
     const collection = userCollections.find(c => c.id === collectionId);
-    if (!collection || !collection.editable) return;
+    if (!collection) return;
 
     if (confirm(`Вы уверены, что хотите удалить коллекцию "${collection.name}"?`)) {
-        userCollections = userCollections.filter(c => c.id !== collectionId);
-        postCollections = postCollections.filter(pc => pc.collectionId !== collectionId);
-        localStorage.setItem('collections', JSON.stringify(userCollections));
-        localStorage.setItem('postCollections', JSON.stringify(postCollections));
-        renderCollectionsList();
+        const result = await apiService.deleteCollection(collectionId);
+        if (result.success) {
+            await renderCollectionsList();
+        } else {
+            alert('Ошибка удаления: ' + result.error);
+        }
     }
 };
 
 // Добавление коллекции
-window.addCollection = function() {
+window.addCollection = async function() {
     const name = prompt('Введите название новой коллекции:');
     if (name && name.trim()) {
-        const newCollection = {
-            id: 'custom-' + Date.now(),
-            name: name.trim(),
-            editable: true
-        };
-        userCollections.push(newCollection);
-        localStorage.setItem('collections', JSON.stringify(userCollections));
-        renderCollectionsList();
+        const result = await apiService.createCollection(name.trim());
+        if (result.success) {
+            await renderCollectionsList();
+        } else {
+            alert('Ошибка создания: ' + result.error);
+        }
     }
 };
 
@@ -221,7 +228,7 @@ function initCollectionsTheme() {
     });
 }
 
-// Инициализация выпадающего меню
+// Меню дропдаун
 function initCollectionsDropdown() {
     const profileBtn = document.getElementById('profileBtn');
     const dropdown = document.getElementById('dropdownMenu');
@@ -238,16 +245,14 @@ function initCollectionsDropdown() {
     });
 }
 
-// Инициализация выхода
+// Выход
 function initCollectionsLogout() {
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', (e) => {
             e.preventDefault();
             if (confirm('Вы уверены, что хотите выйти?')) {
-                localStorage.removeItem('currentUser');
-                localStorage.removeItem('access_token');
-                localStorage.removeItem('refresh_token');
+                apiService.logout();
                 window.location.href = 'index.html';
             }
         });
@@ -281,10 +286,16 @@ function addCollectionStyles() {
         .collection-card {
             cursor: pointer;
         }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-color);
+        }
     `;
     document.head.appendChild(styles);
 }
 
+// Закрытие меню при клике вне
 document.addEventListener('click', function(event) {
     if (!event.target.closest('.collection-actions-dropdown')) {
         document.querySelectorAll('.collection-menu.show').forEach(menu => {
@@ -293,26 +304,15 @@ document.addEventListener('click', function(event) {
     }
 });
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     addCollectionStyles();
-    function checkAndRender() {
-        if (window.feedPosts && window.feedPosts.length > 0) {
-            renderCollectionsList();
-            setTimeout(initCollectionClicks, 100);
-        } else {
-            setTimeout(() => {
-                if (window.feedPosts) {
-                    renderCollectionsList();
-                    initCollectionClicks();
-                } else {
-                    window.feedPosts = [];
-                    renderCollectionsList();
-                }
-            }, 500);
-        }
+    if (!localStorage.getItem('access_token')) {
+        window.location.href = 'index.html';
+        return;
     }
     
-    checkAndRender();
+    await renderCollectionsList();
+    
     const addBtn = document.getElementById('addCollectionPageBtn');
     if (addBtn) {
         addBtn.addEventListener('click', function(e) {
@@ -321,14 +321,11 @@ document.addEventListener('DOMContentLoaded', function() {
             window.addCollection();
         });
     }
-});
-
-document.addEventListener('DOMContentLoaded', function() {
+    
     initCollectionsTheme();
     initCollectionsDropdown();
     initCollectionsLogout();
 });
 
 window.renderCollectionsList = renderCollectionsList;
-window.userCollections = userCollections;
-window.postCollections = postCollections;
+

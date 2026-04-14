@@ -145,11 +145,11 @@ function renderCollectionFeed() {
                 <div class="post-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
                     <h3 class="post-title">${escapeHtml(post.name || post.title)}</h3>
                     <div class="post-actions-dropdown">
-                        <button class="post-menu-btn" onclick="event.stopPropagation(); togglePostMenu(${post.id})">
+                        <button class="post-menu-btn" onclick="event.stopPropagation(); togglePostMenu('${post.id}')">
                             <i class="bi bi-three-dots-vertical"></i>
                         </button>
                         <div class="post-menu" id="post-menu-${post.id}">
-                            <button onclick="event.stopPropagation(); removeFromCollectionDetail(${post.id})" class="remove-menu-item">
+                            <button onclick="event.stopPropagation(); removeFromCollectionDetail('${post.id}')" class="remove-menu-item">
                                 <i class="bi bi-trash"></i> Удалить из коллекции
                             </button>
                         </div>
@@ -157,11 +157,7 @@ function renderCollectionFeed() {
                 </div>
                 <div class="post-city">${escapeHtml(post.city)}${post.address ? `, ${escapeHtml(post.address)}` : ''}</div>
                 <p class="post-description">${escapeHtml(post.description)}</p>
-                <div class="post-footer">
-                    <div class="post-tags">
-                        ${(post.tags || []).map(tag => `<span class="post-tag" data-tag="${tag}">#${escapeHtml(tag)}</span>`).join('')}
-                    </div>
-                </div>
+                
             </div>
         </div>
     `).join('');

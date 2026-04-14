@@ -58,36 +58,8 @@
                     </a>
                     <h1 class="section-title" id="collectionTitle">Загрузка...</h1>
                 </div>
-            </div>
-
-            <div class="filters-row">
-                <div class="filter-city">
-                    <button class="city-toggle-btn" id="cityToggleBtn">
-                        <i class="bi bi-geo-alt"></i>
-                        <span id="selectedCityDisplay">Все города</span>
-                        <i class="bi bi-chevron-down"></i>
-                    </button>
-                    <div class="city-dropdown" id="cityDropdown">
-                        <div class="city-dropdown-header">
-                            <span>Выберите город</span>
-                            <button class="close-dropdown" id="closeCityDropdown">✕</button>
-                        </div>
-                        <div class="city-dropdown-content" id="cityDropdownContent"></div>
-                    </div>
-                </div>
-                <div class="filter-tags">
-                    <button class="tags-toggle-btn" id="tagsToggleBtn">
-                        <i class="bi bi-sliders2"></i>
-                        <span>Фильтр по тегам</span>
-                    </button>
-                    <div class="tags-dropdown" id="tagsDropdown">
-                        <div class="tags-dropdown-header">
-                            <span>Выберите теги</span>
-                            <button class="close-dropdown" id="closeTagsDropdown">✕</button>
-                        </div>
-                        <div class="tags-dropdown-content" id="tagsDropdownContent"></div>
-                    </div>
-                </div>
+                <div class="filters-row">
+                
                 <div class="view-toggle">
                     <button class="view-btn" id="viewList" title="Список">
                         <i class="bi bi-view-stacked"></i>  
@@ -97,6 +69,9 @@
                     </button>
                 </div>
             </div>
+            </div>
+
+            
 
             <div id="selectedTagsContainer" class="selected-tags-container"></div>
             <div id="feedGrid" class="feed-grid"></div>
@@ -115,8 +90,9 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
-    <script src="collection_detail.js"></script>
-    <script src="auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script type="module" src="script.js"></script>
+    <script type="module" src="collection_detail.js"></script>
+    <script type="module" src="auth.js"></script>
 </body>
 </html>
