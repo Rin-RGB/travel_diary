@@ -9,6 +9,7 @@ let currentCollection = null;
 let currentViewMode = 'grid';
 let currentCollectionPosts = [];
 let isAdminUser = false;
+let isLoadingCollection = true;
 
 // Функция для экранирования HTML
 function escapeHtml(str) {
@@ -82,16 +83,18 @@ async function loadCollectionPosts() {
     const feedGrid = document.getElementById('feedGrid');
     if (!feedGrid) return;
     
+    isLoadingCollection = true;
     feedGrid.innerHTML = '<div class="no-posts"><i class="bi bi-hourglass-split"></i><h3>Загрузка...</h3></div>';
     
     try {
         const collection = await apiService.getOneCollection(currentCollectionId, {});
         currentCollectionPosts = collection.places || [];
-        
+        isLoadingCollection = false;
         renderCollectionFeed();
         initCollectionCityFilter();
         initCollectionTagsFilter();
     } catch (error) {
+        isLoadingCollection = false;
         console.error('Error loading posts:', error);
         feedGrid.innerHTML = '<div class="no-posts"><i class="bi bi-exclamation-triangle"></i><h3>Ошибка загрузки</h3><p>Не удалось загрузить коллекцию</p></div>';
     }

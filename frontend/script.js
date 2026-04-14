@@ -485,8 +485,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadTags();
     await updateAdminStatus();
     await loadAndRenderFeed();
-    initThemeToggle();
-    initProfileDropdown();
+    // initThemeToggle();
+    // initProfileDropdown();
     initCityDropdown();
     initTagsDropdown();
     initSearch();

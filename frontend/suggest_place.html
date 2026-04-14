@@ -52,7 +52,7 @@
                         <i class="bi bi-arrow-left"></i>
                         <span>К ленте</span>
                     </a>
-                    <h1 class="section-title">Добавить место</h1> 
+                    <h1 class="section-title">Предложить место</h1> 
                 </div>
             </div>
 
@@ -68,40 +68,135 @@
                     <label for="placeCity" class="form-label">
                         Город <span class="required">*</span>
                     </label>
-                    <select id="placeCity" class="form-input" required>
-                        <option value="">Выберите город</option>
-                    </select>
+                    <input type="text" id="placeCity" class="form-input" placeholder="Например: Москва" required>
                 </div>
-
                 <div class="form-group">
-                    <label for="placeAddress" class="form-label">Адрес</label>
-                    <input type="text" id="placeAddress" class="form-input" placeholder="Улица, дом">
-                </div>
-
-                <div class="form-group">
-                    <label for="placeDescription" class="form-label">Описание</label>
-                    <textarea id="placeDescription" class="form-textarea" rows="4" placeholder="Расскажите о месте..."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Теги</label>
-                    <div id="tagsContainer" class="tags-checkboxes"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="placeImage" class="form-label">Фотография (URL)</label>
-                    <input type="url" id="placeImage" class="form-input" placeholder="https://example.com/photo.jpg">
+                    <label for="placeImageUrl" class="form-label">Ссылка на фото</label>
+                    <input type="url" id="placeImageUrl" class="form-input" placeholder="https://example.com/photo.jpg">
+                    <small style="color: var(--tag-color); font-size: 12px;">Вставьте прямую ссылку на изображение</small>
                 </div>
 
                 <div class="form-actions">
-                    <button type="submit" class="submit-btn" id="submitPlaceBtn">Создать место</button>
+                    <button type="submit" class="submit-btn" id="submitPlaceBtn">Предложить место</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script type="module" src="auth.js"></script>
-    <script type="module" src="suggest_place.js"></script>
+    <script src="auth.js"></script>
+    <script>
+        (async function() {
+            if (typeof isAdmin === 'function') {
+                const isAdminUser = await isAdmin();
+                if (!isAdminUser) {
+                    alert('Только администраторы могут предлагать места');
+                    window.location.href = 'index.html';
+                }
+            }
+        })();
+
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            const icon = themeToggle.querySelector('i');
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                if (icon) {
+                    icon.classList.remove('bi-moon');
+                    icon.classList.add('bi-sun');
+                }
+            }
+            themeToggle.addEventListener('click', () => {
+                const html = document.documentElement;
+                const iconNew = themeToggle.querySelector('i');
+                if (html.hasAttribute('data-theme')) {
+                    html.removeAttribute('data-theme');
+                    if (iconNew) {
+                        iconNew.classList.remove('bi-sun');
+                        iconNew.classList.add('bi-moon');
+                    }
+                    localStorage.setItem('theme', 'light');
+                } else {
+                    html.setAttribute('data-theme', 'dark');
+                    if (iconNew) {
+                        iconNew.classList.remove('bi-moon');
+                        iconNew.classList.add('bi-sun');
+                    }
+                    localStorage.setItem('theme', 'dark');
+                }
+            });
+        }
+
+        const profileBtn = document.getElementById('profileBtn');
+        const dropdown = document.getElementById('dropdownMenu');
+        if (profileBtn && dropdown) {
+            profileBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.toggle('show');
+            });
+            document.addEventListener('click', (e) => {
+                if (!profileBtn.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.classList.remove('show');
+                }
+            });
+        }
+
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (confirm('Вы уверены, что хотите выйти?')) {
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('refresh_token');
+                    localStorage.removeItem('currentUser');
+                    window.location.href = 'index.html';
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('suggestForm');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const title = document.getElementById('placeTitle').value.trim();
+                    const city = document.getElementById('placeCity').value.trim();
+                    const description = document.getElementById('placeDescription').value.trim();
+                    const imageUrl = document.getElementById('placeImageUrl').value.trim();
+                    
+                    if (!title || !city) {
+                        alert('Пожалуйста, заполните обязательные поля (название и город)');
+                        return;
+                    }
+                    
+                    const newPost = {
+                        id: Date.now(),
+                        name: title,
+                        title: title,
+                        city: city,
+                        description: description || 'Новое место',
+                        cover_photo: imageUrl || 'https://via.placeholder.com/400x200?text=Нет+фото',
+                        image: imageUrl || 'https://via.placeholder.com/400x200?text=Нет+фото',
+                        date: new Date().toLocaleDateString('ru-RU'),
+                        tags: []
+                    };
+                    
+                    if (window.feedPosts) {
+                        window.feedPosts.unshift(newPost);
+                        localStorage.setItem('feedPosts', JSON.stringify(window.feedPosts));
+                        alert('Отпралено!');
+                        form.reset();
+                    } else {
+                        window.feedPosts = [newPost];
+                        localStorage.setItem('feedPosts', JSON.stringify(window.feedPosts));
+                        alert('Отправлено!');
+                        form.reset();
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>
+
